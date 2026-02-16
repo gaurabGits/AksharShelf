@@ -22,6 +22,6 @@ router.post("/", protect, adminOnly,
 
 router.get("/:id", getBookById);
 router.get("/", getAllBooks);
-router.get("/:id/read", readBook)
+router.get("/:id/read", protect, readBook)
 
 module.exports = router;
