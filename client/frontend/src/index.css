@@ -1,0 +1,7 @@
+@tailwind base; /* Foundation (resets & defaults) */
+@tailwind components; /* - Blocks (reusable styles) */
+@tailwind utilities; /* - Tools (tiny classes you use directly) */
+
+body {
+    font-family: 'Inter', sans-serif;
+}
