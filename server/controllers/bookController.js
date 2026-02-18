@@ -67,12 +67,15 @@ const readBook = async (req, res) => {
 const getBookById = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
-    if(!book){
-      return res.status(404).json({message: "Book not found"})
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
     }
-    res.json(book);
+
+    const access = { canRead: book.isPaid ? false : true }; // or based on user auth
+    res.json({ book, access });
+
   } catch (error) {
-    return res.status(500).json({message: error.message});
+    return res.status(500).json({ message: error.message });
   }
 };
 
