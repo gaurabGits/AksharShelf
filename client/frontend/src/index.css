@@ -1,7 +1,57 @@
-@tailwind base; /* Foundation (resets & defaults) */
-@tailwind components; /* - Blocks (reusable styles) */
-@tailwind utilities; /* - Tools (tiny classes you use directly) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-body {
-    font-family: 'Inter', sans-serif;
+/* react-pdf fixes */
+.react-pdf__Page {
+  display: block !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  position: relative !important;
+}
+
+.react-pdf__Page canvas {
+  display: block !important;
+}
+
+.react-pdf__Page__textContent {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  overflow: hidden !important;
+}
+
+.react-pdf__Page__textContent span {
+  color: transparent !important;
+  cursor: text !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.react-pdf__Page__textContent span::selection {
+  background: rgba(59, 130, 246, 0.35) !important;
+  color: transparent !important;
+}
+
+/* Mark styling — highlight with visible background and shadow */
+mark {
+  background: #fbbf24 !important;
+  color: #000000 !important;
+}
+
+.react-pdf__Page__textContent mark {
+  background: #fbbf24 !important;
+  color: #000000 !important;
+}
+
+.react-pdf__Page__textContent span mark {
+  background: #fbbf24 !important;
+  color: #000000 !important;
+  font-weight: 100 !important;
+}
+
+.react-pdf__Page__textContent .endOfContent {
+  display: none !important;
 }
