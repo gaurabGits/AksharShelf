@@ -30,7 +30,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!localStorage.getItem("token")) { navigate("/login"); return; }
+    if (!localStorage.getItem("token")) { navigate("/auth/login"); return; }
 
     const cached = localStorage.getItem("user");
     if (cached) {
@@ -50,7 +50,7 @@ export default function ProfilePage() {
 
         const existing = JSON.parse(localStorage.getItem("user") ?? "{}");
         localStorage.setItem("user", JSON.stringify({ ...existing, ...u }));
-      } catch { navigate("/login"); }
+      } catch { navigate("/auth/login"); }
       finally { setLoading(false); }
     })();
   }, [navigate]);

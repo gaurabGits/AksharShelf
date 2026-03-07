@@ -141,12 +141,6 @@ const getAllBooks = async (req, res) => {
 
       const total = await Book.countDocuments(query);
       
-      if (books.length === 0) {
-          return res.status(404).json({
-            message: "No books found."
-          });
-      }
-
       res.json({
         total,
         currentPage: Number(page),

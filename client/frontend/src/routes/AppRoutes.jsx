@@ -1,4 +1,4 @@
-import Books from "../pages/Books.jsx";
+import Books from "../pages/books.jsx";
 import BookDetailPage from "../pages/BookDetailPage.jsx";
 import ProtectedRoute from "../components/ProtectedRoutes.jsx";
 import ReaderPage from "../pages/ReaderPage.jsx";
@@ -19,7 +19,7 @@ export const routes = [
     element: <Books />,
   },
   {
-    path: "/Books/free-books",
+    path: "/books/free-books",
     element: <FreeBooksSection />,
   },
   {

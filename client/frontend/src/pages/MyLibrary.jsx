@@ -82,7 +82,7 @@ export default function MyLibraryPage() {
   const navigate              = useNavigate();
 
   useEffect(() => {
-    if (!localStorage.getItem("token")) { navigate("/login"); return; }
+    if (!localStorage.getItem("token")) { navigate("/auth/login"); return; }
     (async () => {
       try {
         const [r, c, p] = await Promise.allSettled([
@@ -95,7 +95,7 @@ export default function MyLibraryPage() {
           completed: c.status === "fulfilled" ? c.value.data ?? [] : [],
           planned:   p.status === "fulfilled" ? p.value.data ?? [] : [],
         });
-      } catch { navigate("/login"); }
+      } catch { navigate("/auth/login"); }
       finally  { setLoading(false); }
     })();
   }, [navigate]);
