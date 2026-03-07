@@ -55,14 +55,46 @@ export default function ProfilePage() {
     })();
   }, [navigate]);
 
-  // ── Save profile info ────────────────────────────────────────────────────
+  // Save profile info 
   const handleSave = async () => {
+    const name = form.name.trim();
+    const email = form.email.trim();
+
+    const currentName = (user?.name ?? "").trim();
+    const currentEmail = (user?.email ?? "").trim().toLowerCase();
+
+    if (!name) {
+      notify.error("Validation", "Name cannot be empty.");
+        return;
+      } else if(!email){
+      notify.error("Validation", "Email cannot be empty.");
+        return;
+      }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      notify.error("Validation", "Please enter a valid email address.");
+      return;
+    }
+
+    const nameChanged = name !== currentName;
+    const emailChanged = email.toLowerCase() !== currentEmail;
+
+    if (!nameChanged && !emailChanged) {
+      notify.error("No changes detected", "Update at least one field before saving.");
+      return;
+    }
+
+    const payload = {};
+    if (nameChanged) payload.name = name;
+    if (emailChanged) payload.email = email.toLowerCase();
+
     setSaving(true);
     try {
-      const res     = await API.put("/auth/profile", { name: form.name, email: form.email });
+      const res     = await API.put("/auth/profile", payload);
       const updated = res.data.user ?? res.data;
 
       setUser((u) => ({ ...u, ...updated }));
+      setForm((f) => ({ ...f, name: updated.name ?? f.name, email: updated.email ?? f.email }));
 
       const existing = JSON.parse(localStorage.getItem("user") ?? "{}");
       localStorage.setItem("user", JSON.stringify({ ...existing, ...updated }));
@@ -73,17 +105,24 @@ export default function ProfilePage() {
     } finally { setSaving(false); }
   };
 
-  // ── Save password ────────────────────────────────────────────────────────
+  // Save password 
   const handlePasswordSave = async () => {
-    if (!pwdForm.current)                              { notify.error("Validation", "Current password is required.");  return; }
-    if (!pwdForm.password)                             { notify.error("Validation", "New password is required.");       return; }
-    if (pwdForm.password !== pwdForm.confirmPassword)  { notify.error("Validation", "Passwords do not match.");         return; }
+    const current = pwdForm.current;
+    const next = pwdForm.password;
+    const confirm = pwdForm.confirmPassword;
+
+    if (!current)                     { notify.error("Validation", "Current password is required."); return; }
+    if (!next)                        { notify.error("Validation", "New password is required."); return; }
+    if (next.length < 6)              { notify.error("Validation", "New password must be at least 6 characters."); return; }
+    if (current === next)             { notify.error("Validation", "New password must be different from current password."); return; }
+    if (!confirm)                     { notify.error("Validation", "Please confirm your new password."); return; }
+    if (next !== confirm)             { notify.error("Validation", "Passwords do not match."); return; }
 
     setSavingPwd(true);
     try {
       await API.put("/auth/profile/password", {
-        currentPassword: pwdForm.current,
-        newPassword:     pwdForm.password,
+        currentPassword: current,
+        newPassword:     next,
       });
       setPwdForm({ current: "", password: "", confirmPassword: "" });
       setShowPwd(false);
@@ -93,7 +132,7 @@ export default function ProfilePage() {
     } finally { setSavingPwd(false); }
   };
 
-  // ── Logout ───────────────────────────────────────────────────────────────
+  // Logout 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
