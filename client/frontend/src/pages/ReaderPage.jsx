@@ -220,6 +220,11 @@ export default function ReaderPage() {
     return () => observer.disconnect();
   }, [numPages, loaded]);
 
+  useEffect(() => {
+    if (!numPages || currentPage < 1) return;
+    localStorage.setItem(PROGRESS_KEY, String(currentPage));
+  }, [PROGRESS_KEY, currentPage, numPages]);
+
   const setRef = useCallback((el, num) => {
     if (el) pageRefs.current[num] = el;
   }, []);

@@ -1,6 +1,6 @@
 const express = require('express');
 const { addBook, getBookById, readBook, getAllBooks } = require('../controllers/bookController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, optionalProtect } = require('../middleware/authMiddleware');
 const upload = require("../middleware/uploadMiddleware");
 const { adminOnly } = require("../middleware/adminMiddleware");
 
@@ -20,7 +20,7 @@ router.post("/", protect, adminOnly,
     addBook
 );
 
-router.get("/:id", getBookById);
+router.get("/:id", optionalProtect, getBookById);
 router.get("/", getAllBooks);
 router.get("/:id/read", protect, readBook)
 

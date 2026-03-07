@@ -25,7 +25,7 @@ function ProfileLogo() {
       }
     };
     fetchUser();
-  }, []);
+  }, [notify]);
 
   // Close on outside click
   useEffect(() => {

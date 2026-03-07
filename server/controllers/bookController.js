@@ -1,21 +1,30 @@
-const Book = require("../models/Book");
-const { fileURLToPath } = require("url");
+const Book = require("../models/book");
+const Purchase = require("../models/Purchase");
 const path = require("path");
 const fs = require("fs");
 
 // Add a new book
 const addBook = async (req, res) => {
   try {
-    const {
-      title,
-      author,
-      description,
-      category,
-      pdfUrl,
-      coverImage,
-      isPaid,
-      price,
-    } = req.body;
+    const { title, author, description, category } = req.body;
+    const pdfFile = req.files?.pdf?.[0];
+    const coverFile = req.files?.coverImage?.[0];
+
+    const pdfUrl = pdfFile
+      ? `/uploads/${pdfFile.filename}`
+      : req.body.pdfUrl;
+
+    if (!pdfUrl) {
+      return res.status(400).json({ message: "PDF file is required." });
+    }
+
+    const coverImage = coverFile
+      ? `/uploads/${coverFile.filename}`
+      : req.body.coverImage || "";
+
+    const isPaid = req.body.isPaid === true || req.body.isPaid === "true";
+    const parsedPrice = Number(req.body.price);
+    const price = isPaid ? (Number.isFinite(parsedPrice) ? parsedPrice : 0) : 0;
 
     const book = await Book.create({
       title,
@@ -47,7 +56,14 @@ const readBook = async (req, res) => {
 
     // Paid book check
     if (book.isPaid && req.user.role.toLowerCase() !== "admin") {
-      return res.status(403).json({ message: "This is a paid book. Purchase required." });
+      const purchase = await Purchase.findOne({
+        user: req.user.id,
+        book: book._id,
+      });
+
+      if (!purchase) {
+        return res.status(403).json({ message: "This is a paid book. Purchase required." });
+      }
     }
 
     // Define filePath properly
@@ -71,7 +87,22 @@ const getBookById = async (req, res) => {
       return res.status(404).json({ message: "Book not found" });
     }
 
-    const access = { canRead: book.isPaid ? false : true }; // or based on user auth
+    let canRead = !book.isPaid;
+
+    if (book.isPaid && req.user) {
+      const isAdmin = req.user.role?.toLowerCase() === "admin";
+      if (isAdmin) {
+        canRead = true;
+      } else {
+        const purchase = await Purchase.findOne({
+          user: req.user.id,
+          book: book._id,
+        });
+        canRead = !!purchase;
+      }
+    }
+
+    const access = { canRead };
     res.json({ book, access });
 
   } catch (error) {

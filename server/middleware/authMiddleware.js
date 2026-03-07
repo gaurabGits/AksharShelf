@@ -26,5 +26,21 @@ const protect = (req, res, next) => {
     }
 };
 
+const optionalProtect = (req, _res, next) => {
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+        try {
+            const token = req.headers.authorization.split(" ")[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = {
+                id: decoded.userId,
+                role: decoded.userRole
+            };
+        } catch (_error) {
+            // Ignore invalid token on optional auth routes.
+        }
+    }
+    next();
+};
 
-module.exports = { protect };
+
+module.exports = { protect, optionalProtect };

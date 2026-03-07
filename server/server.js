@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json()); // For parsing application/json
 app.use("/api/auth", authRoutes) //Keeps related routes grouped together (/api/auth/register)
 app.use("/api/books", bookRoutes);
-// app.use("/uploads", express.static(path.join(__dirname, "uploads"))); //http://localhost:3000/uploads/filename.pdf (public access to uploads)
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); //http://localhost:3000/uploads/filename.pdf
 
 
 
