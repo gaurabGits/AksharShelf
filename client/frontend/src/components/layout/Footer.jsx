@@ -1,45 +1,95 @@
 import { Link } from "react-router-dom";
 import SystemLogo from "../Logo/SystemLogo";
 
+const LINKS = [
+  { to: "/",       label: "Home"  },
+  { to: "/books",  label: "Books" },
+  { to: "/about",  label: "About" },
+];
+
 export default function Footer() {
-  const links = [
-    { to: "/", label: "Home" },
-    { to: "/books", label: "Browse" },
-    { to: "/about", label: "About" },
-  ];
-
   return (
-    <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
-      <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col items-center gap-8">
-        
-        <SystemLogo className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+    <footer className="bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800/60">
+      <div className="max-w-5xl mx-auto px-6 py-12">
 
-        {/* Navigation */}
-        <nav aria-label="Footer navigation" className="flex flex-wrap justify-center gap-4">
-          {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className="text-sm text-gray-500 dark:text-gray-400 
-                         hover:text-indigo-600 dark:hover:text-indigo-400 
-                         px-3 py-1.5 rounded-lg 
-                         hover:bg-indigo-50 dark:hover:bg-indigo-950/50 
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400
-                         transition-colors duration-200"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Top row */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-10">
 
-        <div className="w-64 h-px bg-gray-200 dark:bg-gray-800" />
+          {/* Brand */}
+          <div className="flex flex-col gap-4 max-w-xs">
+            <div className="flex items-center gap-2.5">
+              <SystemLogo className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white">
+                AksharShelf
+              </span>
+            </div>
+            <p className="text-xs leading-relaxed text-gray-400 dark:text-gray-500">
+              A full-stack reading platform built as a BCA 6th semester
+              final-year project. Discover, track, and share the books
+              that shape your world.
+            </p>
+          </div>
 
-        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-          © {new Date().getFullYear()}{" "}
-          <span className="font-semibold text-indigo-600 dark:text-indigo-400">AksharShelf</span>. 
-          A college project by{" "}
-          <span className="font-medium text-indigo-600 dark:text-indigo-400">Gaurab Lohar</span>
-        </p>
+          {/* Nav */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 dark:text-gray-600">
+              Navigation
+            </p>
+            <nav className="flex flex-col gap-2.5">
+              {LINKS.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className="text-sm text-gray-500 dark:text-gray-400
+                             hover:text-indigo-600 dark:hover:text-indigo-400
+                             transition-colors duration-150 w-fit"
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Project info */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 dark:text-gray-600">
+              Project
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {[
+                { label: "Program",   value: "BCA"       },
+                { label: "Semester",  value: "6th"       },
+                { label: "Stack",     value: "MERN"      },
+                { label: "Year",      value: "2026"      },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 w-16 shrink-0">
+                    {label}
+                  </span>
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gray-100 dark:bg-gray-800/60 my-10" />
+
+        {/* Bottom row */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+            © {new Date().getFullYear()}{" "}
+            <span className="font-medium text-gray-600 dark:text-gray-400">AksharShelf</span>
+            {" "}· Built by{" "}
+            <span className="font-medium text-indigo-600 dark:text-indigo-400">
+              Gaurab Lohar
+            </span>
+          </p>
+        </div>
       </div>
     </footer>
   );

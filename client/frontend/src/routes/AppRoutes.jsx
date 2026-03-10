@@ -8,6 +8,7 @@ import Register from "../pages/Auth/Signup.jsx"
 import MyLibrary from "../pages/MyLibrary.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import FreeBooksSection from "../components/landing/FreeBooksSection.jsx";
+import AboutPage from "../pages/AboutPage.jsx";
 
 export const routes = [
   {
@@ -41,6 +42,10 @@ export const routes = [
         <MyLibrary />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/about",
+    element: <AboutPage />,
   },
   {
     path: "/profile",

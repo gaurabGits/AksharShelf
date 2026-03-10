@@ -38,6 +38,7 @@ function Navbar() {
 
   const navLinks = [
     { to: "/", label: "Home" },
+    ...(!token ? [{ to: "/about", label: "About" }] : []),
     { to: "/books", label: "Browse" },
     ...(token ? [{ to: "/my-library", label: "My Library" }] : []),
   ];
