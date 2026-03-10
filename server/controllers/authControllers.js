@@ -1,4 +1,6 @@
 const User = require('../models/user');
+const Review = require('../models/review');
+const Bookshelf = require('../models/bookshelf');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
@@ -68,6 +70,9 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account is blocked. Contact support.' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -116,6 +121,48 @@ const getProfile = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json({ user: toUserDto(user) });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getProfileActivity = async (req, res) => {
+  try {
+    const limitRaw = Number(req.query.limit);
+    const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 10;
+
+    const [reviews, pins] = await Promise.all([
+      Review.find({ user: req.user.id })
+        .sort({ updatedAt: -1 })
+        .limit(limit)
+        .populate('book', 'title author coverImage'),
+      Bookshelf.find({ user: req.user.id })
+        .sort({ updatedAt: -1 })
+        .limit(limit)
+        .populate('book', 'title author coverImage'),
+    ]);
+
+    res.json({
+      reviews: reviews
+        .filter((review) => review.book)
+        .map((review) => ({
+          _id: review._id,
+          book: review.book,
+          rating: review.rating,
+          comment: review.comment,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+        })),
+      pins: pins
+        .filter((entry) => entry.book)
+        .map((entry) => ({
+          _id: entry._id,
+          book: entry.book,
+          status: entry.status,
+          createdAt: entry.createdAt,
+          updatedAt: entry.updatedAt,
+        })),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -213,6 +260,7 @@ module.exports = {
   totalCount,
   getLastUsers,
   getProfile,
+  getProfileActivity,
   updateProfile,
   updatePassword,
 };
