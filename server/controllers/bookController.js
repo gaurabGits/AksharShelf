@@ -1,9 +1,28 @@
 const Book = require("../models/book");
 const Bookmark = require("../models/bookmark");
 const Bookshelf = require("../models/bookshelf");
+const BookActivity = require("../models/bookActivity");
 const Purchase = require("../models/Purchase");
 const path = require("path");
 const fs = require("fs");
+
+const markActivityOnce = async ({ userId, bookId, field }) => {
+  if (!userId) return false;
+  const now = new Date();
+
+  try {
+    const res = await BookActivity.updateOne(
+      { user: userId, book: bookId, [field]: null },
+      { $set: { [field]: now } },
+      { upsert: true }
+    );
+
+    return (res?.modifiedCount ?? 0) > 0 || (res?.upsertedCount ?? 0) > 0;
+  } catch (err) {
+    if (err?.code === 11000) return false;
+    throw err;
+  }
+};
 
 const attachBookmarkFlag = async (books, userId) => {
   const normalized = books.map((book) => (typeof book.toObject === "function" ? book.toObject() : book));
@@ -89,6 +108,11 @@ const readBook = async (req, res) => {
       }
     }
 
+    const didMarkRead = await markActivityOnce({ userId: req.user?.id, bookId: book._id, field: "readAt" });
+    if (didMarkRead) {
+      await Book.updateOne({ _id: book._id }, { $inc: { reads: 1 } }, { timestamps: false });
+    }
+
     const pdfUrl = book.pdfUrl || "";
 
     // Support base64 data URLs (admin uploads)
@@ -129,6 +153,11 @@ const getBookById = async (req, res) => {
       return res.status(404).json({ message: "Book not found" });
     }
 
+    const didMarkView = await markActivityOnce({ userId: req.user?.id, bookId: book._id, field: "viewedAt" });
+    if (didMarkView) {
+      await Book.updateOne({ _id: book._id }, { $inc: { views: 1 } }, { timestamps: false });
+    }
+
     let canRead = !book.isPaid;
 
     if (book.isPaid && req.user) {
@@ -162,8 +191,13 @@ const getBookById = async (req, res) => {
     }
 
     const access = { canRead };
+    const bookObject = book.toObject();
+    if (didMarkView) {
+      bookObject.views = (Number.isFinite(bookObject.views) ? bookObject.views : 0) + 1;
+    }
+
     const normalizedBook = {
-      ...book.toObject(),
+      ...bookObject,
       isBookmarked,
       shelfStatus,
     };

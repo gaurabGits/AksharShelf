@@ -9,6 +9,7 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineCheckCircle,
   HiOutlineClock,
+  HiOutlineEye,
   HiOutlineLockClosed,
   HiOutlineStar,
   HiStar,
@@ -482,6 +483,8 @@ export default function BookDetailPage() {
   const canRead = access?.canRead;
   const avgRating = Number.isFinite(book.averageRating) ? book.averageRating : 0;
   const totalReviews = Number.isFinite(book.totalRatings) ? book.totalRatings : reviews.length;
+  const totalViews = Number.isFinite(book.views) ? book.views : 0;
+  const totalReads = Number.isFinite(book.reads) ? book.reads : 0;
   const currentShelf = SHELF_OPTIONS.find((o) => o.key === shelfStatus);
   const isLongDesc = (book.description?.length ?? 0) > 200;
 
@@ -557,6 +560,15 @@ export default function BookDetailPage() {
                   <StarRating value={avgRating} readonly />
                   <span className="text-xs text-gray-400">
                     {avgRating.toFixed(1)} - {totalReviews} rating{totalReviews !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+                  <span className="inline-flex items-center gap-1">
+                    <HiOutlineEye className="text-sm" /> {totalViews} view{totalViews !== 1 ? "s" : ""}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <HiOutlineBookOpen className="text-sm" /> {totalReads} read{totalReads !== 1 ? "s" : ""}
                   </span>
                 </div>
 
