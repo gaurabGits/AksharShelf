@@ -5,11 +5,14 @@ import App from "./App";
 import "./index.css"
 import 'react-pdf/dist/Page/TextLayer.css';
 import { NotificationProvider } from "./context/Notification";
+import { AdminAuthProvider } from "./admin/AdminAuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <NotificationProvider>
-      <App />
-    </NotificationProvider>
+    <AdminAuthProvider>
+      <NotificationProvider>
+        <App />
+      </NotificationProvider>
+    </AdminAuthProvider>
   </BrowserRouter>
 );
