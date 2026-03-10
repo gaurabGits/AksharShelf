@@ -3,14 +3,15 @@ import { HiArrowRight} from "react-icons/hi2";
 import FannedBooks from "./FannedBooks";
 import { useEffect, useState } from "react";
 import API from "../../../services/api";
-import BackroundGrid from "../../layout/BackroundGrid";
 
 
 function HeroSection({ onStartFree }) {
-const [totalUsers, setTotalUsers] = useState(null);
+  const isLoggedIn = Boolean(localStorage.getItem("token"));
+  const [totalUsers, setTotalUsers] = useState(null);
   const [lastUsers, setLastUsers] = useState([]);
 
   useEffect(() => {
+    if (isLoggedIn) return;
     const fetchData = async () => {
       try {
         const totalRes = await API.get("/auth/total-users");
@@ -24,9 +25,9 @@ const [totalUsers, setTotalUsers] = useState(null);
     };
 
     fetchData();
-  }, []);
+  }, [isLoggedIn]);
 
-const COLORS = ["bg-indigo-400", "bg-orange-300", "bg-green-300", "bg-purple-300"];
+  const COLORS = ["bg-indigo-400", "bg-orange-300", "bg-green-300", "bg-purple-300"];
 
 
   return (
@@ -84,7 +85,13 @@ const COLORS = ["bg-indigo-400", "bg-orange-300", "bg-green-300", "bg-purple-300
           <div className="orb  absolute -top-32  -right-32 w-[600px] h-[600px] rounded-full bg-indigo-100 dark:bg-indigo-600/20 blur-[120px]" />
           <div className="orb2 absolute -bottom-24 -left-24  w-[400px] h-[400px] rounded-full bg-violet-100 dark:bg-violet-600/15 blur-[100px]" />
         </div>
-        {/* <BackroundGrid /> */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.022] dark:opacity-[0.04]"
+          style={{
+            backgroundImage: `linear-gradient(#6366f1 1px, transparent 1px), linear-gradient(90deg, #6366f1 1px, transparent 1px)`,
+            backgroundSize: "56px 56px",
+          }}
+        />
 
         <div className="relative max-w-6xl mx-auto px-6 py-20 pt-5 w-full">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -121,16 +128,18 @@ const COLORS = ["bg-indigo-400", "bg-orange-300", "bg-green-300", "bg-purple-300
                 </button>
               </div>
 
-              <div className="fade-up d4 flex items-center select-none gap-3 pt-1">
-                <div className="flex -space-x-2">
-                  {lastUsers.map((user, i) => (
-                    <span key={i} className={`w-7 h-7 rounded-full ${user.color || COLORS[i % COLORS.length]} border-2 border-white dark:border-gray-950 flex items-center justify-center text-white text-[10px] font-bold`}>{user.name?.charAt(0)}</span>
-                  ))}
+              {!isLoggedIn && (
+                <div className="fade-up d4 flex items-center select-none gap-3 pt-1">
+                  <div className="flex -space-x-2">
+                    {lastUsers.map((user, i) => (
+                      <span key={i} className={`w-7 h-7 rounded-full ${user.color || COLORS[i % COLORS.length]} border-2 border-white dark:border-gray-950 flex items-center justify-center text-white text-[10px] font-bold`}>{user.name?.charAt(0)}</span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {totalUsers !== null ? `${totalUsers}  Users are registered` : "Loading users..."}
+                  </p>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                 {totalUsers !== null ? `${totalUsers}  Users are registered` : "Loading users..."}
-                </p>
-              </div>
+              )}
             </div>
 
             {/* ── RIGHT — Fanned Cards ── */}

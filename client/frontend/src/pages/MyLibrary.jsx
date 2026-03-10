@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { HiOutlineBookOpen, HiOutlineClock, HiOutlineCheckCircle, HiOutlineBookmarkSquare } from "react-icons/hi2";
 import { getAvatarGradient } from "../utils/avatarColor";
 import API from "../services/api";
-import BackroundGrid from "../components/layout/BackroundGrid";
 
 const getColor = (n = "") => getAvatarGradient(n) ?? getAvatarGradient("");
 
@@ -18,25 +17,54 @@ const TAB_STYLE = {
   completed: { active: "text-emerald-600 border-emerald-500", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" },
   planned:   { active: "text-amber-600 border-amber-500",     badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" },
 };
+const VALID_TABS = new Set(["reading", "completed", "planned"]);
 
-function BookCard({ book, tab }) {
+function BookCard({ book, tab, onMove, onRemove, busy }) {
+  const moveOptions = ["reading", "completed", "planned"].filter((s) => s !== tab);
+  const showMoves = tab !== "completed";
   return (
-    <Link to={`/books/${book._id}`} className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all group">
-      <div className={`w-14 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br ${getColor(book.title)} flex items-center justify-center shadow-sm overflow-hidden`}>
-        {book.coverImage ? (
-          <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
-        ) : (
-          <HiOutlineBookOpen className="text-white text-2xl" />
-        )}
+    <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all group">
+      <Link to={`/books/${book._id}`} className="flex items-center gap-4 min-w-0 flex-1">
+        <div className={`w-14 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br ${getColor(book.title)} flex items-center justify-center shadow-sm overflow-hidden`}>
+          {book.coverImage ? (
+            <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
+          ) : (
+            <HiOutlineBookOpen className="text-white text-2xl" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{book.title}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{book.author ?? "Unknown Author"}</p>
+        </div>
+      </Link>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${TAB_STYLE[tab].badge}`}>
+          {tab === "reading" ? "Reading" : tab === "completed" ? "Completed" : "Planned"}
+        </span>
+        <div className="flex items-center gap-1">
+          {showMoves && moveOptions.map((status) => (
+            <button
+              key={status}
+              onClick={() => onMove(book._id, status)}
+              disabled={busy}
+              className="px-2.5 py-1 text-[10px] font-semibold rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-white dark:hover:bg-gray-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title={`Move to ${status}`}
+            >
+              {status === "reading" ? "To Reading" : status === "completed" ? "To Completed" : "To Planned"}
+            </button>
+          ))}
+          <button
+            onClick={() => onRemove(book._id)}
+            disabled={busy}
+            className="px-2.5 py-1 text-[10px] font-semibold rounded-full border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Remove from shelf"
+          >
+            Remove
+          </button>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{book.title}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{book.author ?? "Unknown Author"}</p>
-      </div>
-      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 whitespace-nowrap ${TAB_STYLE[tab].badge}`}>
-        {tab === "reading" ? "Reading" : tab === "completed" ? "Completed" : "Planned"}
-      </span>
-    </Link>
+    </div>
   );
 }
 
@@ -78,7 +106,10 @@ function SkeletonRow() {
 export default function MyLibraryPage() {
   const [shelf, setShelf]     = useState({ reading: [], completed: [], planned: [] });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab]         = useState("reading");
+  const [busyId, setBusyId]   = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = VALID_TABS.has(searchParams.get("tab")) ? searchParams.get("tab") : "reading";
+  const [tab, setTab]         = useState(initialTab);
   const navigate              = useNavigate();
 
   useEffect(() => {
@@ -100,12 +131,80 @@ export default function MyLibraryPage() {
     })();
   }, [navigate]);
 
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab && VALID_TABS.has(urlTab) && urlTab !== tab) {
+      setTab(urlTab);
+    }
+    if (!urlTab || !VALID_TABS.has(urlTab)) {
+      setSearchParams({ tab });
+    }
+  }, [searchParams, setSearchParams, tab]);
+
   const counts = {
     reading:   shelf.reading.length,
     completed: shelf.completed.length,
     planned:   shelf.planned.length,
   };
   const total = counts.reading + counts.completed + counts.planned;
+
+  const removeLocal = (bookId) => {
+    setShelf((prev) => ({
+      reading: prev.reading.filter((b) => b._id !== bookId),
+      completed: prev.completed.filter((b) => b._id !== bookId),
+      planned: prev.planned.filter((b) => b._id !== bookId),
+    }));
+  };
+
+  const moveLocal = (bookId, nextStatus) => {
+    setShelf((prev) => {
+      let moved = null;
+      const next = {
+        reading: prev.reading.filter((b) => {
+          if (b._id === bookId) moved = b;
+          return b._id !== bookId;
+        }),
+        completed: prev.completed.filter((b) => {
+          if (b._id === bookId) moved = b;
+          return b._id !== bookId;
+        }),
+        planned: prev.planned.filter((b) => {
+          if (b._id === bookId) moved = b;
+          return b._id !== bookId;
+        }),
+      };
+
+      if (moved) {
+        next[nextStatus] = [{ ...moved, shelfStatus: nextStatus }, ...next[nextStatus]];
+      }
+
+      return next;
+    });
+  };
+
+  const handleMove = async (bookId, status) => {
+    setBusyId(bookId);
+    try {
+      await API.post("/bookshelf", { bookId, status });
+      moveLocal(bookId, status);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleRemove = async (bookId) => {
+    setBusyId(bookId);
+    try {
+      await API.delete(`/bookshelf/${bookId}`);
+      removeLocal(bookId);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
@@ -115,10 +214,6 @@ export default function MyLibraryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 px-4">
-        <div>
-            <BackroundGrid />
-        </div>
-
       <div className="max-w-6xl mx-auto flex flex-col gap-7">
         {/* Title */}
         <div className="flex flex-col gap-1">
@@ -136,7 +231,10 @@ export default function MyLibraryPage() {
               return (
                 <button 
                   key={t.key} 
-                  onClick={() => setTab(t.key)}
+                  onClick={() => {
+                    setTab(t.key);
+                    setSearchParams({ tab: t.key });
+                  }}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-4 text-sm font-medium border-b-2 -mb-px transition-all ${
                     active 
                       ? TAB_STYLE[t.key].active 
@@ -163,7 +261,16 @@ export default function MyLibraryPage() {
               ? Array(4).fill(0).map((_, i) => <SkeletonRow key={i} />)
               : shelf[tab].length === 0
                 ? <Empty tab={tab} />
-                : shelf[tab].map((book, i) => <BookCard key={book._id ?? i} book={book} tab={tab} />)
+                : shelf[tab].map((book, i) => (
+                    <BookCard
+                      key={book._id ?? i}
+                      book={book}
+                      tab={tab}
+                      onMove={handleMove}
+                      onRemove={handleRemove}
+                      busy={busyId === book._id}
+                    />
+                  ))
             }
           </div>
 

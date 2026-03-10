@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { HiOutlineBookOpen } from "react-icons/hi2";
+import { HiOutlineBookOpen, HiOutlineBookmark, HiBookmark } from "react-icons/hi2";
 
 export function BookCardSkeleton() {
   return (
@@ -17,14 +17,14 @@ export function BookCardSkeleton() {
   );
 }
 
-const BookCard = ({ book }) => {
+const BookCard = ({ book, onToggleBookmark, isBookmarked = false }) => {
   const navigate = useNavigate();
 
   return (
     <div className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-lg dark:hover:shadow-black/30 hover:-translate-y-1 transition-all duration-300">
 
       {/* Cover */}
-      <div className="h-52 bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <div className="h-52 bg-gray-100 dark:bg-gray-800 overflow-hidden relative">
         {book.coverImage ? (
           <img
             src={book.coverImage}
@@ -35,6 +35,20 @@ const BookCard = ({ book }) => {
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-violet-100 dark:from-indigo-950/60 dark:to-violet-950/60">
             <HiOutlineBookOpen className="text-indigo-300 dark:text-indigo-700 text-5xl" />
           </div>
+        )}
+
+        {typeof onToggleBookmark === "function" && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleBookmark(book);
+            }}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-indigo-600 hover:bg-white transition"
+            title={isBookmarked ? "Bookmarked" : "Add bookmark"}
+          >
+            {isBookmarked ? <HiBookmark className="text-base" /> : <HiOutlineBookmark className="text-base" />}
+          </button>
         )}
       </div>
 

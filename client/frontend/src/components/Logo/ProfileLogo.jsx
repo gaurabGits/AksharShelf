@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { getAvatarGradient } from "../../utils/avatarColor";
-import { useNotification } from "../../context/Notification"; 
+import { useNotification } from "../../context/Notification";
 
 function ProfileLogo() {
-  const notify                = useNotification(); 
+  const notify                = useNotification();
   const [user, setUser]       = useState(null);
   const [open, setOpen]       = useState(false);
   const [loading, setLoading] = useState(true);
@@ -47,6 +47,14 @@ function ProfileLogo() {
     navigate("/auth/login");
   };
 
+  const handleAvatarClick = () => {
+    if (window.innerWidth < 768) {
+      navigate("/profile");
+    } else {
+      setOpen((prev) => !prev);
+    }
+  };
+
   const fullName = user?.name ?? "User";
   const initials = user
     ? `${user.name?.[0] ?? ""}${user.name?.split(" ")[1]?.[0] ?? ""}`.toUpperCase() || "?"
@@ -61,7 +69,7 @@ function ProfileLogo() {
 
       {/* Avatar */}
       <div
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={handleAvatarClick}
         className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarGradient(user?.name ?? "")} flex items-center justify-center
                    text-white text-sm font-bold cursor-pointer select-none
                    ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-950
@@ -70,14 +78,14 @@ function ProfileLogo() {
         {initials}
       </div>
 
-      {/* Dropdown */}
+      {/* Dropdown — desktop only */}
       {open && (
         <div className="absolute right-0 mt-3 w-52 z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden">
 
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
             <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-              {fullName || "User"}
+              {fullName}
             </p>
             <p className="text-[11px] text-gray-400 truncate">{user?.email ?? "N/A"}</p>
           </div>
@@ -87,7 +95,7 @@ function ProfileLogo() {
             <Link
               to="/profile"
               onClick={() => setOpen(false)}
-              className="block px-3 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
+              className="block px-3 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all"
             >
               Profile
             </Link>
@@ -97,11 +105,8 @@ function ProfileLogo() {
           <div className="p-1.5 border-t border-gray-100 dark:border-gray-800">
             <button
               type="button"
-              onClick={() => {
-                setOpen(false);
-                handleLogout();
-              }}
-              className="w-full text-left px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
+              onClick={handleLogout}
+              className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all cursor-pointer"
             >
               Logout
             </button>
