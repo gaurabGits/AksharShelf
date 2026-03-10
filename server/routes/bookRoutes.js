@@ -1,12 +1,23 @@
 const express = require('express');
-const { addBook, getBookById, readBook, getAllBooks } = require('../controllers/bookController');
+const {
+  addBook,
+  getBookById,
+  readBook,
+  getAllBooks,
+  getBookmarkedBooks,
+  addBookmark,
+} = require('../controllers/bookController');
+const {
+  getReviewsForBook,
+  upsertReview,
+  deleteReview
+} = require("../controllers/reviewController");
 const { protect, optionalProtect } = require('../middleware/authMiddleware');
 const upload = require("../middleware/uploadMiddleware");
 const { adminOnly } = require("../middleware/adminMiddleware");
 
 
 const router = express.Router();
-
 
 // router.post("/", protect, addBook);
 // router.post("/", protect, getAllBooks);
@@ -20,8 +31,16 @@ router.post("/", protect, adminOnly,
     addBook
 );
 
-router.get("/:id", optionalProtect, getBookById);
-router.get("/", getAllBooks);
+router.get("/bookmarks", protect, getBookmarkedBooks);
+router.post("/:id/bookmark", protect, addBookmark);
+router.get("/:id/reviews", optionalProtect, getReviewsForBook);
+router.post("/:id/reviews", protect, upsertReview);
+router.delete("/:id/reviews", protect, deleteReview);
+
+
+router.get("/", optionalProtect, getAllBooks);
 router.get("/:id/read", protect, readBook)
+router.get("/:id", optionalProtect, getBookById);
+
 
 module.exports = router;

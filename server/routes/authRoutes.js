@@ -6,6 +6,7 @@ const {
   totalCount,
   getLastUsers,
   getProfile,
+  getProfileActivity,
   updateProfile,
   updatePassword,
 } = require('../controllers/authControllers');
@@ -20,6 +21,7 @@ router.get("/total-users", totalCount);
 router.get("/last-users", getLastUsers);
 
 router.get("/profile", protect, getProfile);
+router.get("/profile/activity", protect, getProfileActivity);
 router.put("/profile", protect, updateProfile);
 router.put("/profile/password", protect, updatePassword);
 
