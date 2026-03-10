@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { HiArrowRight, HiOutlineBookOpen, HiOutlineStar } from "react-icons/hi2";
+import { HiArrowRight, HiOutlineBookOpen, HiOutlineEye, HiOutlineStar } from "react-icons/hi2";
 import API from "../../../services/api";
 
 function FannedBooks() {
@@ -16,20 +16,33 @@ function FannedBooks() {
 
     const fetchBooks = async () => {
       try {
-        const res = await API.get("/books");
-        const booksArray = res.data.books;
+        let res;
+        try {
+          res = await API.get("/books/popular", { params: { limit: 3 } });
+        } catch (_error) {
+          res = await API.get("/books");
+        }
+
+        const booksArray = res?.data?.books;
 
         if (Array.isArray(booksArray)) {
+          const topThree = booksArray.slice(0, 3).map(({ title, author, _id, views, reads }, idx) => ({
+            title,
+            author,
+            id: _id,
+            rank: idx + 1,
+            views: Number.isFinite(views) ? views : 0,
+            reads: Number.isFinite(reads) ? reads : 0,
+          }));
+
+          // Layout order: most popular in middle, 2nd left, 3rd right
+          const ordered = topThree.length === 3 ? [topThree[1], topThree[0], topThree[2]] : topThree;
+
           setBooks(
-            booksArray
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-              .slice(0, 3)
-              .map(({ title, author, _id }, idx) => ({
-                title,
-                author,
-                id: _id,
-                img: BOOK_GRADIENTS[idx] || BOOK_GRADIENTS[0],
-              }))
+            ordered.map((book, idx) => ({
+              ...book,
+              img: BOOK_GRADIENTS[idx] || BOOK_GRADIENTS[0],
+            }))
           );
         }
       } catch (error) {
@@ -43,10 +56,10 @@ function FannedBooks() {
 
 
   const FAN_IDLE = [
-  { rotate: -14, x: -100, z: 10 },
-  { rotate:   0, x:    0, z: 20 },
-  { rotate:  14, x:  100, z: 30 },
-];
+    { rotate: -14, x: -100, z: 10 },
+    { rotate: 0, x: 0, z: 20 },
+    { rotate: 14, x: 100, z: 30 },
+  ];
 
   const getCardStyle = (i) => {
     const base = FAN_IDLE[i];
@@ -88,7 +101,7 @@ function FannedBooks() {
 
         {books && books.map((book, i) => (
           <Link
-            key={i}
+            key={book.id || i}
             to={book.id ? `/books/${book.id}` : "/books"}
             className="absolute bottom-4"
             style={{
@@ -118,7 +131,7 @@ function FannedBooks() {
                 <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-1">
                   <HiOutlineStar className="text-white text-[10px]" />
                   <span className="text-white text-[10px] font-bold">
-                    #{i + 1}
+                    #{book.rank ?? i + 1}
                   </span>
                 </div>
               </div>
@@ -131,6 +144,17 @@ function FannedBooks() {
                 <p className="text-white/70 text-[11px] mt-1.5">
                   {book.author}
                 </p>
+
+                <div className="mt-2 flex items-center gap-3 text-white/85 text-[11px] font-medium">
+                  <span className="inline-flex items-center gap-1">
+                    <HiOutlineEye className="text-xs" />
+                    {book.views}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <HiOutlineBookOpen className="text-xs" />
+                    {book.reads}
+                  </span>
+                </div>
 
                 <div
                   className="mt-3 flex items-center gap-1 text-white/90 text-[11px] font-medium"

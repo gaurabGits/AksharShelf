@@ -267,6 +267,7 @@ const getAllBooks = async (req, res) => {
 
 };
 
+//get bookmarked books
 const getBookmarkedBooks = async (req, res) => {
   try {
     const bookmarks = await Bookmark.find({ user: req.user.id })
@@ -290,6 +291,7 @@ const getBookmarkedBooks = async (req, res) => {
   }
 };
 
+// Add bookmark
 const addBookmark = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id).select("_id");
@@ -313,11 +315,33 @@ const addBookmark = async (req, res) => {
   }
 };
 
+// Get popular books
+const getPopularBooks = async (req, res) => {
+  try {
+    const rawLimit = Number(req.query.limit);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 20) : 3;
+
+    const books = await Book.find({})
+      .sort({ reads: -1, views: -1, createdAt: -1 })
+      .limit(limit);
+
+    const booksWithBookmark = await attachBookmarkFlag(books, req.user?.id);
+
+    return res.json({
+      total: booksWithBookmark.length,
+      books: booksWithBookmark,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   addBook,
   getBookById,
   readBook,
   getAllBooks,
+  getPopularBooks,
   getBookmarkedBooks,
   addBookmark,
 };

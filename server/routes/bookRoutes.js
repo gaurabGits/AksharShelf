@@ -4,6 +4,7 @@ const {
   getBookById,
   readBook,
   getAllBooks,
+  getPopularBooks,
   getBookmarkedBooks,
   addBookmark,
 } = require('../controllers/bookController');
@@ -31,6 +32,7 @@ router.post("/", protect, adminOnly,
     addBook
 );
 
+router.get("/popular", optionalProtect, getPopularBooks);
 router.get("/bookmarks", protect, getBookmarkedBooks);
 router.post("/:id/bookmark", protect, addBookmark);
 router.get("/:id/reviews", optionalProtect, getReviewsForBook);
