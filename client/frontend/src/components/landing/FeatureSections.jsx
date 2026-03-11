@@ -18,6 +18,11 @@ const FEATURES = [
     title: "Smart Profile",
     desc: "Edit your profile, see your shelf stats at a glance, and manage your account — all from one clean page.",
   },
+    {
+    icon: <HiOutlineBookOpen />,
+    title: "Book Recommendations",
+    desc: "Based on what you've read and loved, we'll suggest books we think you'll enjoy next.",
+  },
   {
     icon: <HiOutlineMagnifyingGlass />,
     title: "Instant Search",
@@ -48,7 +53,7 @@ export default function FeaturesSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 cursor-default">
           {FEATURES.map((f, i) => (
             <div
               key={i}

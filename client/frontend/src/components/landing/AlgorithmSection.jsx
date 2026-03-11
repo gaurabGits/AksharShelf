@@ -6,11 +6,7 @@ const COMING_SOON = [
     title: "Smarter Search",
     desc: "We'll make search understand what you mean, not just what you type — so you always find the right book.",
   },
-  {
-    emoji: "✨",
-    title: "Book Recommendations",
-    desc: "Based on what you've read and loved, we'll suggest books we think you'll enjoy next.",
-  },
+
   {
     emoji: "🔐",
     title: "Maybe Purchase Options?",
@@ -32,7 +28,7 @@ export default function AlgorithmSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 cursor-default">
           {COMING_SOON.map((item, i) => (
             <div
               key={i}
