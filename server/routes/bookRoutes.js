@@ -7,6 +7,8 @@ const {
   getPopularBooks,
   getBookmarkedBooks,
   addBookmark,
+  getBookRecommendations,
+  getBookCollaborativeRecommendations,
 } = require('../controllers/bookController');
 const {
   getReviewsForBook,
@@ -41,6 +43,8 @@ router.delete("/:id/reviews", protect, deleteReview);
 
 
 router.get("/", optionalProtect, getAllBooks);
+router.get("/:id/recommendations", optionalProtect, getBookRecommendations);
+router.get("/:id/recommendations/collaborative", optionalProtect, getBookCollaborativeRecommendations);
 router.get("/:id/read", protect, readBook)
 router.get("/:id", optionalProtect, getBookById);
 

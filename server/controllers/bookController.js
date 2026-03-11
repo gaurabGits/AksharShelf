@@ -5,6 +5,8 @@ const BookActivity = require("../models/bookActivity");
 const Purchase = require("../models/Purchase");
 const path = require("path");
 const fs = require("fs");
+const { computeContentBasedSimilarity } = require("../utils/recommendations/contentBased");
+const { getCollaborativeScores } = require("../utils/recommendations/collaborativeFiltering");
 
 const markActivityOnce = async ({ userId, bookId, field }) => {
   if (!userId) return false;
@@ -336,6 +338,153 @@ const getPopularBooks = async (req, res) => {
   }
 };
 
+const getBookRecommendations = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    const rawLimit = Number(req.query.limit);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 20) : 10;
+
+    const target = await Book.findById(bookId).lean();
+    if (!target) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    const candidates = new Map();
+    const pushCandidates = (items) => {
+      for (const item of items) {
+        if (!item?._id) continue;
+        const key = String(item._id);
+        if (key === String(bookId)) continue;
+        if (!candidates.has(key)) candidates.set(key, item);
+      }
+    };
+
+    const baseProjection = "title author description category coverImage isPaid price averageRating totalRatings views reads";
+
+    const [sameCategory, sameAuthor, popularFallback] = await Promise.all([
+      Book.find({ _id: { $ne: bookId }, category: target.category }).select(baseProjection).limit(200).lean(),
+      Book.find({ _id: { $ne: bookId }, author: target.author }).select(baseProjection).limit(80).lean(),
+      Book.find({ _id: { $ne: bookId } })
+        .select(baseProjection)
+        .sort({ reads: -1, views: -1, createdAt: -1 })
+        .limit(120)
+        .lean(),
+    ]);
+
+    pushCandidates(sameCategory);
+    pushCandidates(sameAuthor);
+    if (candidates.size < 80) pushCandidates(popularFallback);
+
+    const scored = [];
+    for (const candidate of candidates.values()) {
+      const sim = computeContentBasedSimilarity(target, candidate);
+      scored.push({
+        ...candidate,
+        recommendation: {
+          algorithm: "content_based",
+          score: sim.score,
+          reasons: sim.reasons,
+        },
+      });
+    }
+
+    scored.sort((a, b) => {
+      if (b.recommendation.score !== a.recommendation.score) return b.recommendation.score - a.recommendation.score;
+      const br = Number.isFinite(b.reads) ? b.reads : 0;
+      const ar = Number.isFinite(a.reads) ? a.reads : 0;
+      if (br !== ar) return br - ar;
+      const bv = Number.isFinite(b.views) ? b.views : 0;
+      const av = Number.isFinite(a.views) ? a.views : 0;
+      return bv - av;
+    });
+
+    const top = scored.slice(0, limit);
+    const topWithBookmarks = await attachBookmarkFlag(top, req.user?.id);
+
+    return res.json({
+      algorithm: "content_based",
+      total: topWithBookmarks.length,
+      books: topWithBookmarks,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getBookCollaborativeRecommendations = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+    const rawLimit = Number(req.query.limit);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 20) : 12;
+
+    const target = await Book.findById(bookId).select("_id").lean();
+    if (!target) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    const scores = await getCollaborativeScores(BookActivity, bookId, {
+      maxUsers: 400,
+      maxCandidates: 500,
+    });
+
+    const baseProjection = "title author description category coverImage isPaid price averageRating totalRatings views reads";
+
+    let orderedBooks = [];
+    if (scores.length > 0) {
+      const top = scores.slice(0, limit * 3);
+      const idOrder = top.map((x) => String(x._id));
+      const scoreById = new Map(top.map((x) => [String(x._id), x]));
+
+      const docs = await Book.find({ _id: { $in: idOrder } }).select(baseProjection).lean();
+      const docById = new Map(docs.map((d) => [String(d._id), d]));
+      orderedBooks = idOrder.map((id) => docById.get(id)).filter(Boolean);
+
+      orderedBooks = orderedBooks.slice(0, limit).map((book) => {
+        const stat = scoreById.get(String(book._id));
+        const readers = Number.isFinite(stat?.readers) ? stat.readers : 0;
+        const viewers = Number.isFinite(stat?.viewers) ? stat.viewers : 0;
+        const reasons = [];
+        if (readers > 0) reasons.push("Readers also read");
+        if (viewers > 0) reasons.push("Viewers also viewed");
+
+        return {
+          ...book,
+          recommendation: {
+            algorithm: "collaborative",
+            score: Number.isFinite(stat?.score) ? stat.score : 0,
+            reasons,
+          },
+        };
+      });
+    } else {
+      const fallback = await Book.find({ _id: { $ne: bookId } })
+        .select(baseProjection)
+        .sort({ reads: -1, views: -1, createdAt: -1 })
+        .limit(limit)
+        .lean();
+
+      orderedBooks = fallback.map((book) => ({
+        ...book,
+        recommendation: {
+          algorithm: "collaborative",
+          score: 0,
+          reasons: ["Popular right now"],
+        },
+      }));
+    }
+
+    const booksWithBookmarks = await attachBookmarkFlag(orderedBooks, req.user?.id);
+
+    return res.json({
+      algorithm: "collaborative",
+      total: booksWithBookmarks.length,
+      books: booksWithBookmarks,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   addBook,
   getBookById,
@@ -344,4 +493,6 @@ module.exports = {
   getPopularBooks,
   getBookmarkedBooks,
   addBookmark,
+  getBookRecommendations,
+  getBookCollaborativeRecommendations,
 };
