@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HiOutlineMoon, HiOutlineSun } from "react-icons/hi2";
 import { HiOutlineMenuAlt3, HiOutlineX } from "react-icons/hi";
 import SystemLogo from "../Logo/SystemLogo";
@@ -8,19 +8,47 @@ import ProfileLogo from "../Logo/ProfileLogo";
 function Navbar() {
   const [darkMode, setDarkMode] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const token = localStorage.getItem("token");
+  const lastScrollYRef = useRef(0);
+  const tickingRef = useRef(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      setScrolled(y > 8);
+
+      if (menuOpen) return;
+      if (tickingRef.current) return;
+      tickingRef.current = true;
+
+      window.requestAnimationFrame(() => {
+        const lastY = lastScrollYRef.current || 0;
+        const delta = y - lastY;
+
+        if (y < 64) {
+          setHidden(false);
+        } else if (delta > 12) {
+          setHidden(true);
+        } else if (delta < -12) {
+          setHidden(false);
+        }
+
+        lastScrollYRef.current = y;
+        tickingRef.current = false;
+      });
+    };
+
+    lastScrollYRef.current = window.scrollY || 0;
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [menuOpen]);
 
   // Close menu on route change
   useEffect(() => {
@@ -34,6 +62,10 @@ function Navbar() {
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (menuOpen) setHidden(false);
+  }, [menuOpen]);
+
   const isActive = (path) => location.pathname === path;
 
   const navLinks = [
@@ -45,9 +77,11 @@ function Navbar() {
 
   return (
     <>
-      <nav className={`sticky top-0 z-50 bg-white dark:bg-gray-950 transition-all duration-300 ${
-        scrolled ? "border-b border-gray-200 dark:border-gray-800 shadow-sm" : "border-b border-transparent"
-      }`}>
+      <nav
+        className={`fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-gray-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/80 supports-[backdrop-filter]:dark:bg-gray-950/70 transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out motion-reduce:transition-none will-change-transform ${
+          hidden ? "-translate-y-full" : "translate-y-0"
+        } ${scrolled ? "border-b border-gray-200 dark:border-gray-800 shadow-md" : "border-b border-transparent"}`}
+      >
         <div className="max-w-9xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
 
           <Link to="/" onClick={() => setMenuOpen(false)}>

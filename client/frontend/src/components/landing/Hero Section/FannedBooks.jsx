@@ -19,7 +19,7 @@ function FannedBooks() {
         let res;
         try {
           res = await API.get("/books/popular", { params: { limit: 3 } });
-        } catch (_error) {
+        } catch {
           res = await API.get("/books");
         }
 
