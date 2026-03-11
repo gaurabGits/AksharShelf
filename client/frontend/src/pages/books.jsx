@@ -94,7 +94,7 @@ export default function BooksPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] dark:bg-gray-950 py-10 px-4">
+    <div className="min-h-screen bg-white dark:bg-gray-950 py-10 px-4">
       <div className="max-w-6xl mx-auto flex flex-col gap-10">
 
         {/* Page Header */}

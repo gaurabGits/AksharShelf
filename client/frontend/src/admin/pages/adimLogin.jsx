@@ -47,7 +47,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
       <div className="bg-white w-full max-w-sm rounded-2xl shadow-md p-8">
 
         {/* Header */}

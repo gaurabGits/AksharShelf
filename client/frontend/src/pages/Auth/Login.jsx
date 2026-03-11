@@ -80,7 +80,7 @@ function Login() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 transition-all duration-200">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 px-4 transition-all duration-200">
       <div className="w-full max-w-4xl">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden flex">
 

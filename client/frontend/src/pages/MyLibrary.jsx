@@ -207,13 +207,13 @@ export default function MyLibraryPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+    <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 px-4">
+    <div className="min-h-screen bg-white dark:bg-gray-950 py-10 px-4">
       <div className="max-w-6xl mx-auto flex flex-col gap-7">
         {/* Title */}
         <div className="flex flex-col gap-1">

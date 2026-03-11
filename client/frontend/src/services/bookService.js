@@ -11,3 +11,15 @@ export const addBookBookmark = (id) => {
 export const fetchBookmarkedBooks = () => {
   return api.get('/books/bookmarks');
 };
+
+export const fetchBookRecommendations = (id, { limit } = {}) => {
+  const params = {};
+  if (Number.isFinite(Number(limit)) && Number(limit) > 0) params.limit = Number(limit);
+  return api.get(`/books/${id}/recommendations`, { params });
+};
+
+export const fetchBookCollaborativeRecommendations = (id, { limit } = {}) => {
+  const params = {};
+  if (Number.isFinite(Number(limit)) && Number(limit) > 0) params.limit = Number(limit);
+  return api.get(`/books/${id}/recommendations/collaborative`, { params });
+};

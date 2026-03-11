@@ -801,7 +801,7 @@ export default function ProfilePage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
       <div className="w-8 h-8 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
     </div>
   );
@@ -813,7 +813,7 @@ export default function ProfilePage() {
   const roleLabel = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Member";
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
 
       {/* Breadcrumb */}
       <div className="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-3 flex items-center gap-2">
