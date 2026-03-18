@@ -6,12 +6,6 @@ const COMING_SOON = [
     title: "Smarter Search",
     desc: "We'll make search understand what you mean, not just what you type — so you always find the right book.",
   },
-
-  {
-    emoji: "🔐",
-    title: "Maybe Purchase Options?",
-    desc: "I am thinking about to add buying options for books that are not free. But I am not sure yet, it depends on how the project evolves and if there is enough interest for it.",
-  }
 ];
 
 export default function AlgorithmSection() {

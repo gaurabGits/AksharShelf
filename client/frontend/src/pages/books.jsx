@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import {
   HiOutlineMagnifyingGlass,
   HiOutlineBookOpen,
-  HiOutlineSparkles,
 } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
@@ -58,6 +57,10 @@ export default function BooksPage() {
   }, [allBooks]);
 
   // Mini Car─
+  const isSearching = search.trim().length > 0;
+  const shouldShowRecentlyAdded =
+	    !loading && recentBooks.length > 0 && !isSearching;
+
   const MiniCard = ({ book }) => (
     <div
       onClick={() => navigate(`/books/${book._id}`)}
@@ -118,11 +121,16 @@ export default function BooksPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 dark:focus:border-indigo-600 shadow-sm transition-all"
             />
+            {isSearching && recentBooks.length > 0 && (
+              <p className="mt-1 text-[11px] text-gray-400">
+                Recently added is hidden while searching.
+              </p>
+            )}
           </div>
         </div>
 
         {/* Recently Added Section */}
-        {!loading && recentBooks.length > 0 && (
+        {shouldShowRecentlyAdded && (
           <section>
             {/* Section header */}
             <div className="flex items-center justify-between mb-4">

@@ -6,6 +6,7 @@ import {
   HiOutlineStar,
   HiOutlineShieldCheck,
 } from "react-icons/hi2";
+import { MdOutlinePaid } from "react-icons/md";
 
 const FEATURES = [
   {
@@ -38,6 +39,12 @@ const FEATURES = [
     title: "Secure & Free to Start",
     desc: "Token-based authentication keeps your shelf private. Free books available with no purchase required.",
   },
+  
+  {
+    icon: <MdOutlinePaid />,
+    title: "Purchase Books",
+    desc: "We implement a dummy purchase system for demonstration purposes. Simulating a real-world experience without actual transactions.",
+  }
 ];
 
 export default function FeaturesSection() {
