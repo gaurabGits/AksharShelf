@@ -13,6 +13,8 @@ const {
   deleteBook,
   getAllReviews,
   deleteReview,
+  getPaymentOrders,
+  getPurchases,
 } = require("../controllers/adminControllers");
 
 router.post("/login", loginAdmin);
@@ -33,5 +35,8 @@ router.delete("/books/:id", adminAuth, deleteBook);
 router.get("/reviews", adminAuth, getAllReviews);
 router.delete("/reviews/:id", adminAuth, deleteReview);
 
-module.exports = router;
+// Payments (dummy)
+router.get("/payments/orders", adminAuth, getPaymentOrders);
+router.get("/payments/purchases", adminAuth, getPurchases);
 
+module.exports = router;

@@ -6,6 +6,8 @@ const authRoutes = require("./routes/authRoutes");
 const bookRoutes = require("./routes/bookRoutes")
 const adminRoutes = require("./routes/adminRoutes")
 const bookshelfRoutes = require("./routes/bookshelfRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const uploadsGuard = require("./middleware/uploadsGuard");
 const path = require("path"); 
 
 require("dotenv").config(); 
@@ -24,7 +26,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes); //Keeps related routes grouped together (/api/auth/register)
 app.use("/api/books", bookRoutes);
 app.use("/api/bookshelf", bookshelfRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads"))); //http://localhost:3000/uploads/filename.pdf
+app.use("/api/payments", paymentRoutes);
+app.use("/uploads", uploadsGuard, express.static(path.join(__dirname, "uploads"))); // public images; PDFs gated for paid books
 
 
 

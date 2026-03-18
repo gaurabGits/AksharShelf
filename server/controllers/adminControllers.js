@@ -2,9 +2,17 @@ const Admin = require("../models/admin");
 const User = require("../models/user");
 const Book = require("../models/book");
 const Review = require("../models/review");
+const Purchase = require("../models/Purchase");
+const PaymentOrder = require("../models/paymentOrder");
 const jwt = require("jsonwebtoken");
 
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+const minorToMajor = (amountMinor) => {
+  const n = Number(amountMinor);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n) / 100;
+};
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -201,6 +209,110 @@ const deleteReview = async (req, res) => {
   }
 };
 
+const getPaymentOrders = async (req, res) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 25));
+    const status = String(req.query.status || "").trim().toLowerCase();
+    const bookId = String(req.query.bookId || "").trim();
+    const userId = String(req.query.userId || "").trim();
+
+    const filter = {};
+    if (status) filter.status = status;
+    if (bookId) filter.book = bookId;
+    if (userId) filter.user = userId;
+
+    const statsAgg = await PaymentOrder.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          paidOrders: { $sum: { $cond: [{ $eq: ["$status", "paid"] }, 1, 0] } },
+          pendingOrders: { $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] } },
+          failedOrders: { $sum: { $cond: [{ $eq: ["$status", "failed"] }, 1, 0] } },
+          expiredOrders: { $sum: { $cond: [{ $eq: ["$status", "expired"] }, 1, 0] } },
+          paidAmountMinor: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "paid"] },
+                { $ifNull: ["$amountMinor", 0] },
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]);
+
+    const statsRow = statsAgg?.[0] ?? {
+      totalOrders: 0,
+      paidOrders: 0,
+      pendingOrders: 0,
+      failedOrders: 0,
+      expiredOrders: 0,
+      paidAmountMinor: 0,
+    };
+
+    const [total, orders] = await Promise.all([
+      PaymentOrder.countDocuments(filter),
+      PaymentOrder.find(filter)
+        .populate("user", "name email")
+        .populate("book", "title isPaid price")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    const normalizedOrders = (orders || []).map((o) => ({
+      ...o,
+      amount: minorToMajor(o?.amountMinor),
+    }));
+
+    return res.json({
+      total,
+      page,
+      limit,
+      stats: {
+        ...statsRow,
+        paidAmount: minorToMajor(statsRow.paidAmountMinor),
+      },
+      orders: normalizedOrders,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getPurchases = async (req, res) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 25));
+    const bookId = String(req.query.bookId || "").trim();
+    const userId = String(req.query.userId || "").trim();
+
+    const filter = {};
+    if (bookId) filter.book = bookId;
+    if (userId) filter.user = userId;
+
+    const [total, purchases] = await Promise.all([
+      Purchase.countDocuments(filter),
+      Purchase.find(filter)
+        .populate("user", "name email")
+        .populate("book", "title isPaid price")
+        .sort({ purchasedAt: -1, createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    return res.json({ total, page, limit, purchases });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   loginAdmin,
   getDashboardStats,
@@ -213,5 +325,6 @@ module.exports = {
   deleteBook,
   getAllReviews,
   deleteReview,
+  getPaymentOrders,
+  getPurchases,
 };
-
