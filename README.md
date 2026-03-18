@@ -1,24 +1,49 @@
-# eBook Platform
+# eBook Platform (Akshar Shelf)
 
-Full-stack eBook platform (Express + MongoDB + React) with:
-- Free + paid books (dummy payment flow)
-- Reading access enforcement (purchase required for paid books)
-- Content-based + collaborative recommendations
-- Admin panel (users/books/reviews/payments)
+A simple eBook platform built with:
+- Backend: Node.js + Express + MongoDB (Mongoose)
+- Frontend: React + Vite + Tailwind
+
+It supports free books, paid books (dummy payment), reading progress, bookmarks/shelf, reviews, and 2 recommendation algorithms.
+
+## What you can do (features)
+
+User side:
+- Browse books, view details, read PDFs
+- Paid books: buy/unlock and then read
+- Bookshelf statuses: reading / completed / planned
+- Bookmarks
+- Reviews and ratings
+- Profile page (including a Payments section)
+- Recommendations: content-based + collaborative
+
+Admin panel:
+- Admin login
+- Manage users (block/unblock/delete)
+- Manage books (add/edit/delete + upload PDF/cover)
+- Manage reviews (view/delete)
+- Payments page (orders + purchases + revenue stats)
+
+## Project structure
+
+- `server/` Express API + MongoDB models
+- `client/frontend/` React app
+- `server/uploads/` uploaded PDFs and images (served at `/uploads`)
 
 ## Requirements
 
-- Node.js (server + client)
-- MongoDB (local or remote)
+- Node.js
+- MongoDB
 
-## Environment variables
+## Server configuration (.env)
 
-Server reads `server/.env`:
+Create/update `server/.env`:
 
-- `PORT` (example: `3000`)
-- `MONGO_URL` (example: `mongodb://127.0.0.1:27017/ebookdb`)
-- `JWT_SECRET` (used for both user JWT + admin JWT)
-- `ADMIN_USERNAME`, `ADMIN_PASSWORD` (default admin bootstrap credentials)
+- `PORT=3000`
+- `MONGO_URL=mongodb://127.0.0.1:27017/ebookdb`
+- `JWT_SECRET=your_secret_here` (used by both user JWT and admin JWT)
+- `ADMIN_USERNAME=admin`
+- `ADMIN_PASSWORD=admin123`
 
 ## Run locally
 
@@ -38,134 +63,95 @@ npm install
 npm run dev
 ```
 
-API base URL (frontend): `http://localhost:3000/api`
+Frontend calls the API at `http://localhost:3000/api` (see `client/frontend/src/services/api.jsx`).
 
----
+## Important routes (quick map)
 
-# Dummy payment system (paid books)
+Books:
+- `GET /api/books` list books
+- `GET /api/books/:id` book detail (includes `access.canRead`)
+- `GET /api/books/:id/read` read/download PDF (protected for paid books)
 
-This project includes a **dummy** payment provider (`provider: "dummy"`) to simulate paid-book checkout with **professional security patterns**:
+Recommendations:
+- `GET /api/books/:id/recommendations` content-based
+- `GET /api/books/:id/recommendations/collaborative` collaborative
 
-- **Server-calculated pricing**: the server reads `Book.price` from MongoDB; the client cannot override the amount.
-- **Order records**: checkout creates a `PaymentOrder` record (`pending -> paid/failed/expired`).
-- **Idempotency**: checkout supports an `Idempotency-Key` header so refresh/retries do not create duplicates.
-- **Client secret**: each order has a `clientSecret` and confirmation requires it (prevents guessing order IDs).
-- **Access unlock is separate**: a paid order upserts a `Purchase` record (unique per `user+book`) which is what unlocks reading.
+Dummy payments (user must be logged in):
+- `POST /api/payments/books/:bookId/checkout` create/return an order
+- `POST /api/payments/orders/:orderId/confirm` confirm dummy payment and unlock
+- `GET /api/payments/me/orders` my recent orders
+- `GET /api/payments/me/purchases` my purchases
 
-> Important (real payments): this dummy flow accepts card-like fields only for simulation. In production you must use a payment provider (Stripe/Khalti/eSewa/etc.) and **never** send raw card data to your own server; use provider tokenization/SDKs.
+Admin:
+- `POST /api/admin/login`
+- `GET /api/admin/payments/orders` orders + revenue stats
+- `GET /api/admin/payments/purchases` purchases list
 
-## Data models (MongoDB)
+## Paid books: how access works (dummy payment)
 
-- `Book` (`server/models/book.js`): `isPaid`, `price`
-- `PaymentOrder` (`server/models/paymentOrder.js`):
-  - `status`: `pending | paid | failed | expired`
-  - `amountMinor`: integer amount in minor units (price x 100)
-  - `idempotencyKey`: unique per user
-  - `clientSecret`: stored in DB (not returned by default unless selected)
-  - `expiresAt`: order expires after ~15 minutes
-- `Purchase` (`server/models/Purchase.js`):
-  - unique index `{ user, book }`
+The goal is: buying 1 book should unlock ONLY that 1 book.
 
-## Access enforcement (paid book read)
+This project enforces that in 2 places:
 
-Reading a paid book requires a `Purchase`:
+1) Reading endpoint (main protection)
+- The reader loads PDFs from `GET /api/books/:id/read`
+- If the book is paid, the server checks for a `Purchase` record for (user, book)
 
-- Book details returns `access.canRead` (`GET /api/books/:id`)
-- PDF reading endpoint blocks non-purchased users (`GET /api/books/:id/read`)
+2) Direct `/uploads/*.pdf` protection (extra protection)
+- Some book PDFs are stored as `/uploads/<filename>.pdf`
+- A guard blocks direct PDF download unless the user purchased that book (or is admin)
 
-## User payment API (dummy provider)
+### Checkout flow (dummy)
 
-All payment routes require a logged-in user (`Authorization: Bearer <token>`).
+1) Create a checkout order
+- `POST /api/payments/books/:bookId/checkout`
+- Server calculates price from the `Book` document (client cannot change price)
+- Creates a `PaymentOrder` with status `pending`
 
-### 1) Create checkout order
+2) Confirm payment (simulated)
+- `POST /api/payments/orders/:orderId/confirm`
+- Requires `clientSecret` + card-like fields
+- On success: order becomes `paid` and a `Purchase` record is upserted
 
-`POST /api/payments/books/:bookId/checkout`
+Test cards:
+- `4242424242424242` = success
+- `4000000000000002` = decline
 
-Optional header:
-- `Idempotency-Key: <any unique string>`
+### Why these payment pieces exist (short)
 
-Response includes:
-- `order.id` (order id)
-- `order.clientSecret` (used for confirm)
-- `order.amount` (derived from server price)
+- Server-calculated amount: stops price tampering
+- Idempotency key: safe retries/refresh
+- Client secret: prevents guessing other users' order IDs
+- Purchase record: the single source of truth for reading access
 
-### 2) Confirm payment (simulated)
+## Recommendation system (easy explanation)
 
-`POST /api/payments/orders/:orderId/confirm`
+This project offers 2 recommendation types per book.
 
-Body example:
+### 1) Content-based recommendations
 
-```json
-{
-  "clientSecret": "...from checkout...",
-  "paymentMethod": {
-    "cardNumber": "4242424242424242",
-    "expMonth": 12,
-    "expYear": 2030,
-    "cvc": "123"
-  }
-}
-```
+Endpoint:
+- `GET /api/books/:id/recommendations`
 
-Test outcomes:
-- `4242424242424242` -> success (creates `Purchase`)
-- `4000000000000002` -> decline (`failed`)
+How it works:
+- Looks for books with the same category and/or author
+- Also compares text tokens from title/description/category/author
+- Returns a score and short reasons (example: "Same category")
 
-## Admin payment visibility
+### 2) Collaborative recommendations
 
-Admin JWT routes (admin panel uses `Authorization: Bearer <adminToken>`):
+Endpoint:
+- `GET /api/books/:id/recommendations/collaborative`
 
-- `GET /api/admin/payments/orders` (query: `status`, `page`, `limit`, `bookId`, `userId`)
-- `GET /api/admin/payments/purchases` (query: `page`, `limit`, `bookId`, `userId`)
+How it works:
+- Tracks user activity in `BookActivity` (viewedAt/readAt)
+- Finds users who viewed/read the target book
+- Recommends other books those users also viewed/read
+- Reads are weighted higher than views (stronger intent)
+- If not enough activity: falls back to popular books
 
-Admin UI page:
-- `/admin/payments` (shows latest orders + purchases)
+## Notes for production (important)
 
----
-
-# Recommendation system
-
-This project ships **two** recommendation endpoints for each book:
-
-1) **Content-based** (metadata similarity)
-2) **Collaborative** (user activity co-occurrence)
-
-Both endpoints return books with a `recommendation` object containing:
-- `algorithm`: `"content_based"` or `"collaborative"`
-- `score`: numeric score used for ordering
-- `reasons`: short human-readable reasons (used in UI if needed)
-
-## 1) Content-based recommendations
-
-Route:
-- `GET /api/books/:id/recommendations?limit=10`
-
-How it works (`server/utils/recommendations/contentBased.js`):
-- Normalizes and tokenizes `title + description + category + author`
-- Computes a cosine-like overlap score on tokens
-- Adds strong boosts for exact normalized matches:
-  - `Same category` has the highest weight
-  - `Same author` has the next weight
-  - Text similarity adds a smaller weight
-
-Candidate pool strategy (`server/controllers/bookController.js`):
-- Prefer same category and same author
-- If not enough candidates, fall back to popular books (reads/views)
-
-## 2) Collaborative recommendations
-
-Route:
-- `GET /api/books/:id/recommendations/collaborative?limit=12`
-
-Signals used:
-- `viewedAt` and `readAt` events stored in `BookActivity` (`server/models/bookActivity.js`)
-
-How it works (`server/utils/recommendations/collaborativeFiltering.js`):
-- Finds up to `maxUsers` users who viewed/read the target book
-- Aggregates other books those users also viewed/read
-- Per-activity weighting:
-  - `readAt` counts more than `viewedAt` (stronger intent)
-- Sorts by total score, then readers, then viewers
-
-Fallback:
-- If there is not enough activity, returns "Popular right now" books (reads/views)
+- Payment is dummy: for real payments you must integrate a real provider and never handle raw card data on your own server.
+- Keep `JWT_SECRET` private and strong.
+- Consider storing API base URL in environment configs for deployment.
