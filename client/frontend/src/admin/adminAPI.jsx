@@ -23,3 +23,8 @@ export const deleteBook = (id) => axios.delete(`${BASE_URL}/books/${id}`, authHe
 export const fetchAllReviews = () => axios.get(`${BASE_URL}/reviews`, authHeaders());
 export const deleteReviewById = (id) => axios.delete(`${BASE_URL}/reviews/${id}`, authHeaders());
 
+export const fetchPaymentOrders = (params = {}) =>
+  axios.get(`${BASE_URL}/payments/orders`, { ...authHeaders(), params });
+
+export const fetchPurchases = (params = {}) =>
+  axios.get(`${BASE_URL}/payments/purchases`, { ...authHeaders(), params });

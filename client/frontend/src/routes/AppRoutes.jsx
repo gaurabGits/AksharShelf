@@ -9,6 +9,7 @@ import MyLibrary from "../pages/MyLibrary.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import FreeBooksSection from "../components/landing/FreeBooksSection.jsx";
 import AboutPage from "../pages/AboutPage.jsx";
+import PurchasePage from "../pages/PurchasePage.jsx";
 
 export const routes = [
   {
@@ -66,6 +67,14 @@ export const routes = [
     element: (
       <ProtectedRoute>
         <ReaderPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/purchase/:id",
+    element: (
+      <ProtectedRoute>
+        <PurchasePage />
       </ProtectedRoute>
     ),
   },

@@ -3,6 +3,7 @@ import { BsBookshelf } from "react-icons/bs";
 import { CiLogout } from "react-icons/ci";
 import {
   HiOutlineBookOpen,
+  HiOutlineCreditCard,
   HiOutlineHome,
   HiOutlineSparkles,
   HiOutlineStar,
@@ -15,6 +16,7 @@ const navLinks = [
   { to: "/admin/books", icon: HiOutlineBookOpen, label: "Books" },
   { to: "/admin/users", icon: HiOutlineUsers, label: "Users" },
   { to: "/admin/reviews", icon: HiOutlineStar, label: "Reviews" },
+  { to: "/admin/payments", icon: HiOutlineCreditCard, label: "Payments" },
   { to: "/admin/algorithm", icon: HiOutlineSparkles, label: "Algorithm" },
 ];
 

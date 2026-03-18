@@ -8,6 +8,7 @@ import AdminUser from "./admin/pages/adminUser";
 import AdminBook from "./admin/pages/adminBook";
 import AdminReview from "./admin/pages/adminReview";
 import AdminAlgorithm from "./admin/pages/adminAlgorithm";
+import AdminPayments from "./admin/pages/adminPayments";
 
 function App() {
   return (
@@ -49,6 +50,14 @@ function App() {
           }
         />
         <Route
+          path="/admin/payments"
+          element={
+            <AdminRoutes>
+              <AdminPayments />
+            </AdminRoutes>
+          }
+        />
+        <Route
           path="/admin/algorithm"
           element={
             <AdminRoutes>
@@ -68,4 +77,3 @@ function App() {
 }
 
 export default App;
-

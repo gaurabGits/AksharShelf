@@ -18,6 +18,7 @@ import {
   HiOutlineCheckCircle,
   HiOutlineBookmarkSquare,
   HiOutlineTrash,
+  HiOutlineCreditCard,
   HiExclamationTriangle,
   HiXMark,
 } from "react-icons/hi2";
@@ -118,6 +119,7 @@ const NAV_ITEMS = [
   { key: "profile",   label: "Profile",     icon: HiOutlineUser               },
   { key: "security",  label: "Security",    icon: HiOutlineShieldCheck        },
   { key: "activity",  label: "My Activity", icon: HiOutlineChatBubbleLeftRight },
+  { key: "payments",  label: "Payments",    icon: HiOutlineCreditCard         },
   { key: "bookshelf", label: "Bookshelf",   icon: HiOutlineBookOpen           },
 ];
 
@@ -348,6 +350,182 @@ function SecurityTab({ pwdForm, setPwdForm, savingPwd, onSave }) {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Tab: Payments
+function PaymentsTab() {
+  const notify = useNotification();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const [ordersRes, purchasesRes] = await Promise.all([
+          API.get("/payments/me/orders?limit=15"),
+          API.get("/payments/me/purchases?limit=15"),
+        ]);
+
+        if (!mounted) return;
+        setOrders(Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : []);
+        setPurchases(Array.isArray(purchasesRes.data?.purchases) ? purchasesRes.data.purchases : []);
+      } catch (err) {
+        if (!mounted) return;
+        const message = err.response?.data?.message || "Failed to load payments.";
+        setError(message);
+        notify.error("Payments", message);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [notify]);
+
+  const statusBadge = (status) => {
+    const s = String(status || "").toLowerCase();
+    if (s === "paid") return "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40";
+    if (s === "pending") return "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/40";
+    if (s === "failed") return "bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800/40";
+    if (s === "expired") return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700";
+    return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700";
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <h2 className="text-base font-bold text-gray-900 dark:text-white">Payments</h2>
+        <p className="text-xs text-gray-400 mt-0.5">Your purchases and recent payment orders.</p>
+      </div>
+      <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
+      {error ? (
+        <div className="rounded-xl border border-red-100 dark:border-red-800/40 bg-red-50 dark:bg-red-950/20 p-4 text-sm text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      ) : null}
+
+      {loading ? (
+        <div className="py-10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <p className="text-sm font-bold text-gray-900 dark:text-white">Purchased books</p>
+              <p className="text-[11px] text-gray-400">{purchases.length} shown</p>
+            </div>
+
+            <div className="p-3 space-y-2">
+              {purchases.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <HiOutlineCreditCard className="text-4xl mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-medium">No purchases yet.</p>
+                  <p className="text-xs mt-1">Buy a paid book to unlock access.</p>
+                </div>
+              ) : (
+                purchases.map((p) => (
+                  <div
+                    key={p.id}
+                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-3 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0">
+                      {p.book?.coverImage ? (
+                        <img
+                          src={`http://localhost:3000${p.book.coverImage}`}
+                          alt={p.book.title || "Book cover"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {p.book?.title || "Book"}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Purchased {formatRelativeTime(p.purchasedAt)}
+                      </p>
+                    </div>
+
+                    {p.book?.id ? (
+                      <button
+                        onClick={() => navigate(`/read/${p.book.id}`)}
+                        className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
+                      >
+                        Read
+                      </button>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <p className="text-sm font-bold text-gray-900 dark:text-white">Recent orders</p>
+              <p className="text-[11px] text-gray-400">{orders.length} shown</p>
+            </div>
+
+            <div className="p-3 space-y-2">
+              {orders.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <HiOutlineCreditCard className="text-4xl mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-medium">No orders yet.</p>
+                  <p className="text-xs mt-1">Starting a checkout will create an order.</p>
+                </div>
+              ) : (
+                orders.map((o) => (
+                  <div
+                    key={o.id}
+                    className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {o.book?.title || "Order"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Rs. {o.amount} - {formatRelativeTime(o.createdAt)}
+                        </p>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full border text-[10px] font-bold ${statusBadge(o.status)}`}>
+                        {String(o.status || "").toUpperCase()}
+                      </span>
+                    </div>
+
+                    {o.status === "pending" && o.book?.id ? (
+                      <div className="pt-3 flex justify-end">
+                        <button
+                          onClick={() => navigate(`/purchase/${o.book.id}`)}
+                          className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          Continue checkout
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -846,6 +1024,7 @@ export default function ProfilePage() {
           {activeTab === "profile"   && <ProfileTab  form={form} setForm={setForm} saving={saving} onSave={handleSave} />}
           {activeTab === "security"  && <SecurityTab pwdForm={pwdForm} setPwdForm={setPwdForm} savingPwd={savingPwd} onSave={handlePasswordSave} />}
           {activeTab === "activity"  && <ActivityTab activity={activity} setActivity={setActivity} loading={loadingActivity} error={activityError} />}
+          {activeTab === "payments"  && <PaymentsTab />}
           {activeTab === "bookshelf" && <BookshelfTab counts={shelfCounts} loading={loadingShelf} />}
         </div>
       </div>
