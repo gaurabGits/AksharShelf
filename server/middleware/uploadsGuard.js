@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 
 const Book = require("../models/book");
 const Purchase = require("../models/Purchase");
+const User = require("../models/user");
 
 const getBearerToken = (req) => {
   const header = req.headers?.authorization;
@@ -40,15 +41,23 @@ const uploadsGuard = async (req, res, next) => {
       return res.status(401).json({ message: "Not authorized, token failed" });
     }
 
-    const role = String(decoded?.userRole || "").toLowerCase();
-    if (role === "admin") return next();
-
     const userId = decoded?.userId;
     if (!userId) {
       return res.status(401).json({ message: "Not authorized, token failed" });
     }
 
-    const purchase = await Purchase.findOne({ user: userId, book: book._id }).select("_id").lean();
+    const user = await User.findById(userId).select("role isBlocked").lean();
+    if (!user) {
+      return res.status(401).json({ message: "Not authorized, user not found" });
+    }
+    if (user.isBlocked) {
+      return res.status(403).json({ message: "Your account is blocked. Contact support." });
+    }
+
+    const role = String(user?.role || "").toLowerCase();
+    if (role === "admin") return next();
+
+    const purchase = await Purchase.findOne({ user: user._id, book: book._id }).select("_id").lean();
     if (!purchase) {
       return res.status(403).json({ message: "This is a paid book. Purchase required." });
     }
@@ -60,4 +69,3 @@ const uploadsGuard = async (req, res, next) => {
 };
 
 module.exports = uploadsGuard;
-

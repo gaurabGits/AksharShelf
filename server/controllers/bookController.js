@@ -68,7 +68,12 @@ const addBook = async (req, res) => {
 
     const isPaid = req.body.isPaid === true || req.body.isPaid === "true";
     const parsedPrice = Number(req.body.price);
-    const price = isPaid ? (Number.isFinite(parsedPrice) ? parsedPrice : 0) : 0;
+    if (isPaid) {
+      if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+        return res.status(400).json({ message: "Paid books must have a price greater than 0." });
+      }
+    }
+    const price = isPaid ? parsedPrice : 0;
 
     const book = await Book.create({
       title,
@@ -99,7 +104,8 @@ const readBook = async (req, res) => {
     }
 
     // Paid book check
-    if (book.isPaid && req.user.role.toLowerCase() !== "admin") {
+    const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
+    if (book.isPaid && !isAdmin) {
       const purchase = await Purchase.findOne({
         user: req.user.id,
         book: book._id,
@@ -236,10 +242,10 @@ const getAllBooks = async (req, res) => {
 
     // Filter free / paid / recent
     if (type === "free") {
-      query.price = 0;
+      query.isPaid = false;
     }
     if (type === "paid") {
-      query.price = { $gt: 0 };
+      query.isPaid = true;
     }
     if (type === "recent") {
       const thirtyDaysAgo = new Date();

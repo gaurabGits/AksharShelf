@@ -157,7 +157,21 @@ const getAllBooks = async (_req, res) => {
 
 const addBook = async (req, res) => {
   try {
-    const book = new Book(req.body);
+    const payload = { ...(req.body ?? {}) };
+    const isPaid = payload.isPaid === true || payload.isPaid === "true";
+    const parsedPrice = Number(payload.price);
+
+    payload.isPaid = isPaid;
+    if (isPaid) {
+      if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+        return res.status(400).json({ message: "Paid books must have a price greater than 0." });
+      }
+      payload.price = parsedPrice;
+    } else {
+      payload.price = 0;
+    }
+
+    const book = new Book(payload);
     const savedBook = await book.save();
     return res.status(201).json(savedBook);
   } catch (error) {
@@ -167,7 +181,32 @@ const addBook = async (req, res) => {
 
 const editBook = async (req, res) => {
   try {
-    const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const existing = await Book.findById(req.params.id).select("isPaid price");
+    if (!existing) return res.status(404).json({ message: "Book not found" });
+
+    const updates = { ...(req.body ?? {}) };
+
+    let isPaid = existing.isPaid;
+    if (typeof updates.isPaid !== "undefined") {
+      isPaid = updates.isPaid === true || updates.isPaid === "true";
+    }
+    updates.isPaid = isPaid;
+
+    let price = existing.price;
+    if (typeof updates.price !== "undefined") {
+      price = Number(updates.price);
+    }
+
+    if (isPaid) {
+      if (!Number.isFinite(price) || price <= 0) {
+        return res.status(400).json({ message: "Paid books must have a price greater than 0." });
+      }
+      updates.price = price;
+    } else {
+      updates.price = 0;
+    }
+
+    const book = await Book.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
     if (!book) return res.status(404).json({ message: "Book not found" });
     return res.json(book);
   } catch (error) {

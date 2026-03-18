@@ -1,45 +1,81 @@
 const jwt = require('jsonwebtoken');
+const User = require("../models/user");
 
-const protect = (req, res, next) => {
-    let token;
-    // token format: Bearer <token>
-    if(req.headers.authorization && req.headers.authorization.startsWith("Bearer")){
-        try {
-            token = req.headers.authorization.split(" ")[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-            // Store both ID and role together
-            req.user = {
-                id: decoded.userId,
-                role: decoded.userRole
-            };
-
-            // req.user = decoded; 
-            next(); // allow request 
-
-        } catch (error) {
-            return res.status(401).json({message:"Not authorized, token failed"})
-        }
+const protect = async (req, res, next) => {
+    const header = req.headers?.authorization;
+    if (!header || !header.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Not authorized, no token" });
     }
-    if(!token){
-        return res.status(401).json({message:"Not authorized, no token"});
+
+    const token = String(header.split(" ")[1] ?? "").trim();
+    if (!token) {
+        return res.status(401).json({ message: "Not authorized, no token" });
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (_error) {
+        return res.status(401).json({ message: "Not authorized, token failed" });
+    }
+
+    const userId = decoded?.userId;
+    if (!userId) {
+        return res.status(401).json({ message: "Not authorized, token failed" });
+    }
+
+    try {
+        const user = await User.findById(userId).select("role isBlocked").lean();
+        if (!user) {
+            return res.status(401).json({ message: "Not authorized, user not found" });
+        }
+        if (user.isBlocked) {
+            return res.status(403).json({ message: "Your account is blocked. Contact support." });
+        }
+
+        req.user = {
+            id: String(user._id),
+            role: user.role,
+        };
+
+        return next();
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
 };
 
-const optionalProtect = (req, _res, next) => {
-    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-        try {
-            const token = req.headers.authorization.split(" ")[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = {
-                id: decoded.userId,
-                role: decoded.userRole
-            };
-        } catch (_error) {
-            // Ignore invalid token on optional auth routes.
-        }
+const optionalProtect = async (req, _res, next) => {
+    const header = req.headers?.authorization;
+    if (!header || !header.startsWith("Bearer ")) {
+        return next();
     }
-    next();
+
+    const token = String(header.split(" ")[1] ?? "").trim();
+    if (!token) {
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded?.userId;
+        if (!userId) {
+            return next();
+        }
+
+        const user = await User.findById(userId).select("role isBlocked").lean();
+        if (!user || user.isBlocked) {
+            return next();
+        }
+
+        req.user = {
+            id: String(user._id),
+            role: user.role,
+        };
+    } catch (_error) {
+        // Ignore invalid token on optional auth routes.
+    }
+
+    return next();
 };
 
 
