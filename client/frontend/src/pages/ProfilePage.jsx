@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   HiArrowLeft,
   HiOutlineEnvelope,
@@ -122,6 +122,12 @@ const NAV_ITEMS = [
   { key: "payments",  label: "Payments",    icon: HiOutlineCreditCard         },
   { key: "bookshelf", label: "Bookshelf",   icon: HiOutlineBookOpen           },
 ];
+
+const normalizeTabKey = (value) => {
+  const raw = String(value || "").trim();
+  const valid = NAV_ITEMS.some((i) => i.key === raw);
+  return valid ? raw : "profile";
+};
 
 // Shelf stat 
 const SHELF_STATS = [
@@ -842,12 +848,14 @@ function BookshelfTab({ counts, loading }) {
 export default function ProfilePage() {
   const notify   = useNotification();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [user, setUser]           = useState(null);
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
-  const [activeTab, setActiveTab] = useState("profile");
+  const urlTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(() => normalizeTabKey(urlTab));
 
   const [activity, setActivity]               = useState({ reviews: [], pins: [] });
   const [loadingActivity, setLoadingActivity] = useState(true);
@@ -858,6 +866,21 @@ export default function ProfilePage() {
 
   const [form, setForm]       = useState({ name: "", email: "" });
   const [pwdForm, setPwdForm] = useState({ current: "", password: "", confirmPassword: "" });
+
+  useEffect(() => {
+    const normalized = normalizeTabKey(urlTab);
+    if (normalized !== activeTab) setActiveTab(normalized);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlTab]);
+
+  const handleSelectTab = (tabKey) => {
+    const normalized = normalizeTabKey(tabKey);
+    setActiveTab(normalized);
+
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", normalized);
+    setSearchParams(next);
+  };
 
   useEffect(() => {
     if (!localStorage.getItem("token")) { navigate("/auth/login"); return; }
@@ -1015,7 +1038,7 @@ export default function ProfilePage() {
           initials={initials}
           roleLabel={roleLabel}
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleSelectTab}
           onLogout={handleLogout}
           shelfCounts={shelfCounts}
         />
