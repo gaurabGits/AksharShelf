@@ -24,9 +24,10 @@ import { useNotification } from "../context/Notification";
 import API from "../services/api";
 import ContentBasedFilteringSidebar from "../components/recommendations/ContentBasedFilteringSidebar";
 import CollaborativeFilteringBottom from "../components/recommendations/CollaborativeFilteringBottom";
+import { getJwtPayload, isJwtExpired } from "../utils/jwt";
+
 
 /* Constants */
-
 const SHELF_OPTIONS = [
   {
     key: "reading",
@@ -57,19 +58,21 @@ const AVATAR_COLORS = [
 ];
 
 /* Helpers */
-
 function getCurrentUser() {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return {
-      _id: payload.id || payload._id || "me",
-      name: payload.name || payload.username || "You",
-    };
-  } catch {
-    return { _id: "me", name: "You" };
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  if (isJwtExpired(token)) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return null;
   }
+
+  const payload = getJwtPayload(token);
+  const userId = payload?.userId || payload?.id || payload?._id;
+  if (!userId) return null;
+
+  return { _id: String(userId), name: "You" };
 }
 
 function formatRelativeTime(value) {
