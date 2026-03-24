@@ -15,6 +15,8 @@ const {
   deleteReview,
   getPaymentOrders,
   getPurchases,
+  grantPurchaseAccess,
+  updatePurchaseAccess,
 } = require("../controllers/adminControllers");
 
 router.post("/login", loginAdmin);
@@ -38,5 +40,7 @@ router.delete("/reviews/:id", adminAuth, deleteReview);
 // Payments (dummy)
 router.get("/payments/orders", adminAuth, getPaymentOrders);
 router.get("/payments/purchases", adminAuth, getPurchases);
+router.post("/payments/purchases/grant", adminAuth, grantPurchaseAccess);
+router.put("/payments/purchases/:id", adminAuth, updatePurchaseAccess);
 
 module.exports = router;

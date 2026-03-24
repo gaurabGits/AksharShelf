@@ -1,4 +1,5 @@
 const Admin = require("../models/admin");
+const mongoose = require("mongoose");
 const User = require("../models/user");
 const Book = require("../models/book");
 const Review = require("../models/review");
@@ -15,6 +16,25 @@ const minorToMajor = (amountMinor) => {
 };
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const parseExpiryInput = ({ expiresAt, durationDays, neverExpire }) => {
+  if (neverExpire === true) return { expiresAt: null };
+
+  const days = Number(durationDays);
+  if (Number.isFinite(days) && days > 0) {
+    return { expiresAt: new Date(Date.now() + days * 24 * 60 * 60 * 1000) };
+  }
+
+  if (expiresAt === null) return { expiresAt: null };
+  if (typeof expiresAt === "string" && expiresAt.trim() === "") return { expiresAt: null };
+  if (expiresAt) {
+    const d = new Date(expiresAt);
+    if (Number.isNaN(d.getTime())) return { error: "Invalid expiresAt date." };
+    return { expiresAt: d };
+  }
+
+  return { error: "Provide expiresAt, durationDays, or neverExpire." };
+};
 
 const loginAdmin = async (req, res) => {
   const username = String(req.body?.username || "").trim();
@@ -340,13 +360,123 @@ const getPurchases = async (req, res) => {
       Purchase.find(filter)
         .populate("user", "name email")
         .populate("book", "title isPaid price")
+        .populate("grantedBy", "username")
         .sort({ purchasedAt: -1, createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),
     ]);
 
-    return res.json({ total, page, limit, purchases });
+    const now = Date.now();
+    const normalized = (purchases || []).map((p) => ({
+      ...p,
+      isExpired: Boolean(p.expiresAt && new Date(p.expiresAt).getTime() <= now),
+    }));
+
+    return res.json({ total, page, limit, purchases: normalized });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// POST /api/admin/payments/purchases/grant
+const grantPurchaseAccess = async (req, res) => {
+  try {
+    const userId = String(req.body?.userId || "").trim();
+    const bookId = String(req.body?.bookId || "").trim();
+    const adminNote = String(req.body?.adminNote || "").trim();
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid userId." });
+    }
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      return res.status(400).json({ message: "Invalid bookId." });
+    }
+
+    const [user, book] = await Promise.all([
+      User.findById(userId).select("_id").lean(),
+      Book.findById(bookId).select("_id title isPaid price").lean(),
+    ]);
+
+    if (!user) return res.status(404).json({ message: "User not found." });
+    if (!book) return res.status(404).json({ message: "Book not found." });
+
+    const parsed = parseExpiryInput({
+      expiresAt: req.body?.expiresAt,
+      durationDays: req.body?.durationDays,
+      neverExpire: req.body?.neverExpire,
+    });
+    if (parsed.error) return res.status(400).json({ message: parsed.error });
+
+    const purchase = await Purchase.findOneAndUpdate(
+      { user: userId, book: bookId },
+      {
+        $set: {
+          purchasedAt: new Date(),
+          expiresAt: parsed.expiresAt,
+          grantSource: "admin",
+          grantedBy: req.admin?._id ?? null,
+          adminNote: adminNote || null,
+        },
+        $setOnInsert: { user: userId, book: bookId },
+      },
+      { new: true, upsert: true, runValidators: true }
+    )
+      .populate("user", "name email")
+      .populate("book", "title isPaid price")
+      .populate("grantedBy", "username");
+
+    return res.json({ message: "Access granted.", purchase });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// PUT /api/admin/payments/purchases/:id
+const updatePurchaseAccess = async (req, res) => {
+  try {
+    const purchaseId = String(req.params.id || "").trim();
+    if (!mongoose.Types.ObjectId.isValid(purchaseId)) {
+      return res.status(400).json({ message: "Invalid purchase id." });
+    }
+
+    const adminNote = typeof req.body?.adminNote === "string" ? req.body.adminNote.trim() : undefined;
+    const revoke = Boolean(req.body?.revoke);
+
+    let expiresAt;
+    if (revoke) {
+      expiresAt = new Date();
+    } else {
+      const parsed = parseExpiryInput({
+        expiresAt: req.body?.expiresAt,
+        durationDays: req.body?.durationDays,
+        neverExpire: req.body?.neverExpire,
+      });
+      if (parsed.error && adminNote === undefined) {
+        return res.status(400).json({ message: parsed.error });
+      }
+      expiresAt = parsed.expiresAt;
+    }
+
+    const set = {
+      grantSource: "admin",
+      grantedBy: req.admin?._id ?? null,
+    };
+    if (adminNote !== undefined) set.adminNote = adminNote || null;
+    if (revoke || expiresAt !== undefined) set.expiresAt = expiresAt;
+
+    const updated = await Purchase.findByIdAndUpdate(
+      purchaseId,
+      { $set: set },
+      { new: true, runValidators: true }
+    )
+      .populate("user", "name email")
+      .populate("book", "title isPaid price")
+      .populate("grantedBy", "username");
+
+    if (!updated) return res.status(404).json({ message: "Purchase not found." });
+
+    return res.json({ message: "Access updated.", purchase: updated });
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -366,4 +496,6 @@ module.exports = {
   deleteReview,
   getPaymentOrders,
   getPurchases,
+  grantPurchaseAccess,
+  updatePurchaseAccess,
 };

@@ -1,12 +1,12 @@
-const User = require('../models/user');
-const Review = require('../models/review');
-const Bookshelf = require('../models/bookshelf');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const User = require("../models/user");
+const Review = require("../models/review");
+const Bookshelf = require("../models/bookshelf");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 const toUserDto = (user) => ({
-  id: user._id,
+  id: String(user._id),
   name: user.name,
   email: user.email,
   role: user.role,
@@ -14,49 +14,60 @@ const toUserDto = (user) => ({
   updatedAt: user.updatedAt,
 });
 
-const createToken = (user) => jwt.sign(
-  {
-    userId: user._id,
-    userRole: user.role,
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: '1h' }
-);
+const createToken = (user) => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not configured");
+
+  return jwt.sign(
+    {
+      userId: user._id,
+      userRole: user.role,
+    },
+    secret,
+    { expiresIn: "1h" }
+  );
+};
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const signupUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     if (!name?.trim() || !email?.trim() || !password) {
-      return res.status(400).json({ message: 'Name, email and password are required.' });
+      return res.status(400).json({ message: "Name, email and password are required." });
     }
     if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+      return res.status(400).json({ message: "Password must be at least 6 characters." });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const userExists = await User.findOne({ email: normalizedEmail });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Invalid email address." });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const userExists = await User.findOne({ email: normalizedEmail });
+    if (userExists) {
+      return res.status(409).json({ message: "User already exists" });
+    }
 
     const user = await User.create({
       name: name.trim(),
       email: normalizedEmail,
-      password: hashedPassword,
+      password,
     });
 
     const token = createToken(user);
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: "User registered successfully",
       token,
       user: toUserDto(user),
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ message: "User already exists" });
+    }
     res.status(500).json({ message: error.message });
   }
 };
@@ -65,24 +76,41 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const normalizedEmail = email?.toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
-    if (!user) {
-      return res.status(400).json({ message: 'User not found' });
-    }
-    if (user.isBlocked) {
-      return res.status(403).json({ message: 'Your account is blocked. Contact support.' });
+    if (!email?.trim() || !password) {
+      return res.status(400).json({ message: "Email and password are required." });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid password' });
+    const normalizedEmail = email.toLowerCase().trim();
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({ message: "Invalid email address." });
     }
+
+    const user = await User.findOne({ email: normalizedEmail }).select("+password");
+    if (!user) return res.status(401).json({ message: "Invalid email or password" });
+    if (user.isBlocked) {
+      return res.status(403).json({ message: "Your account is blocked. Contact support." });
+    }
+
+    let isMatch = false;
+    try {
+      isMatch = typeof user.matchPassword === "function"
+        ? await user.matchPassword(password)
+        : await bcrypt.compare(password, user.password);
+    } catch (_error) {
+      // Backward compatibility: handle legacy plain-text passwords by upgrading on login.
+      if (typeof user.password === "string" && user.password === password) {
+        user.password = password;
+        await user.save();
+        isMatch = true;
+      }
+    }
+
+    if (!isMatch) return res.status(401).json({ message: "Invalid email or password" });
 
     const token = createToken(user);
 
     res.json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
       user: toUserDto(user),
     });
@@ -118,7 +146,7 @@ const getLastUsers = async (_req, res) => {
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     res.json({ user: toUserDto(user) });
   } catch (error) {
@@ -173,7 +201,7 @@ const updateProfile = async (req, res) => {
     const { name, email } = req.body;
 
     if (!name?.trim() && !email?.trim()) {
-      return res.status(400).json({ message: 'Provide at least a name or email.' });
+      return res.status(400).json({ message: "Provide at least a name or email." });
     }
 
     const updates = {};
@@ -181,8 +209,8 @@ const updateProfile = async (req, res) => {
 
     if (email?.trim()) {
       const normalizedEmail = email.toLowerCase().trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-        return res.status(400).json({ message: 'Invalid email address.' });
+      if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({ message: "Invalid email address." });
       }
 
       const taken = await User.findOne({
@@ -190,7 +218,7 @@ const updateProfile = async (req, res) => {
         _id: { $ne: req.user.id },
       });
       if (taken) {
-        return res.status(409).json({ message: 'That email is already in use.' });
+        return res.status(409).json({ message: "That email is already in use." });
       }
 
       updates.email = normalizedEmail;
@@ -205,12 +233,12 @@ const updateProfile = async (req, res) => {
     if (!updated) return res.status(404).json({ message: 'User not found' });
 
     res.json({
-      message: 'Profile updated successfully.',
+      message: "Profile updated successfully.",
       user: toUserDto(updated),
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(409).json({ message: 'That email is already in use.' });
+      return res.status(409).json({ message: "That email is already in use." });
     }
     res.status(500).json({ message: error.message });
   }
@@ -221,33 +249,49 @@ const updatePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword) {
-      return res.status(400).json({ message: 'Current password is required.' });
+      return res.status(400).json({ message: "Current password is required." });
     }
     if (!newPassword) {
-      return res.status(400).json({ message: 'New password is required.' });
+      return res.status(400).json({ message: "New password is required." });
     }
     if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+      return res.status(400).json({ message: "Password must be at least 6 characters." });
     }
 
     const user = await User.findById(req.user.id).select('+password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    let isMatch = false;
+    let passwordWasPlaintext = false;
+
+    try {
+      isMatch = typeof user.matchPassword === "function"
+        ? await user.matchPassword(currentPassword)
+        : await bcrypt.compare(currentPassword, user.password);
+    } catch (_error) {
+      if (typeof user.password === "string" && user.password === currentPassword) {
+        isMatch = true;
+        passwordWasPlaintext = true;
+      }
+    }
     if (!isMatch) {
-      return res.status(401).json({ message: 'Current password is incorrect.' });
+      return res.status(401).json({ message: "Current password is incorrect." });
     }
 
-    const isSame = await bcrypt.compare(newPassword, user.password);
+    let isSame = false;
+    try {
+      isSame = await bcrypt.compare(newPassword, user.password);
+    } catch (_error) {
+      isSame = passwordWasPlaintext && user.password === newPassword;
+    }
     if (isSame) {
-      return res.status(400).json({ message: 'New password must differ from current.' });
+      return res.status(400).json({ message: "New password must differ from current." });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    user.password = newPassword;
     await user.save();
 
-    res.json({ message: 'Password changed successfully.' });
+    res.json({ message: "Password changed successfully." });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

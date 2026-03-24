@@ -106,9 +106,11 @@ const readBook = async (req, res) => {
     // Paid book check
     const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
     if (book.isPaid && !isAdmin) {
+      const now = new Date();
       const purchase = await Purchase.findOne({
         user: req.user.id,
         book: book._id,
+        $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
       });
 
       if (!purchase) {
@@ -173,9 +175,11 @@ const getBookById = async (req, res) => {
       if (isAdmin) {
         canRead = true;
       } else {
+        const now = new Date();
         const purchase = await Purchase.findOne({
           user: req.user.id,
           book: book._id,
+          $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
         });
         canRead = !!purchase;
       }

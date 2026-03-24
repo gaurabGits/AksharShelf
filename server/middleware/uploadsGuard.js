@@ -57,7 +57,14 @@ const uploadsGuard = async (req, res, next) => {
     const role = String(user?.role || "").toLowerCase();
     if (role === "admin") return next();
 
-    const purchase = await Purchase.findOne({ user: user._id, book: book._id }).select("_id").lean();
+    const now = new Date();
+    const purchase = await Purchase.findOne({
+      user: user._id,
+      book: book._id,
+      $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
+    })
+      .select("_id expiresAt")
+      .lean();
     if (!purchase) {
       return res.status(403).json({ message: "This is a paid book. Purchase required." });
     }

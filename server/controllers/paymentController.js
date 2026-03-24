@@ -7,6 +7,8 @@ const PaymentOrder = require("../models/paymentOrder");
 
 const ORDER_TTL_MS = 15 * 60 * 1000;
 
+const activePurchaseClause = (now) => ({ $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] });
+
 const toAmountMinor = (price) => {
   const numeric = Number(price);
   if (!Number.isFinite(numeric)) return null;
@@ -109,7 +111,14 @@ const createBookCheckout = async (req, res) => {
       return res.status(400).json({ message: "This book has an invalid price." });
     }
 
-    const existingPurchase = await Purchase.findOne({ user: userId, book: book._id }).select("_id").lean();
+    const now = new Date();
+    const existingPurchase = await Purchase.findOne({
+      user: userId,
+      book: book._id,
+      ...activePurchaseClause(now),
+    })
+      .select("_id expiresAt")
+      .lean();
     if (existingPurchase) {
       return res.json({
         message: "Already purchased.",
@@ -122,7 +131,6 @@ const createBookCheckout = async (req, res) => {
     const rawKey = (req.get("Idempotency-Key") ?? "").trim();
     const idempotencyKey = rawKey.length > 0 ? rawKey.slice(0, 128) : crypto.randomUUID();
 
-    const now = new Date();
     const expiresAt = new Date(now.getTime() + ORDER_TTL_MS);
 
     const existingOrder = await PaymentOrder.findOne({ user: userId, idempotencyKey }).select("+clientSecret");
@@ -291,7 +299,16 @@ const confirmDummyOrderPayment = async (req, res) => {
     // Unlock access for the user.
     await Purchase.updateOne(
       { user: userId, book: paid.book },
-      { $setOnInsert: { user: userId, book: paid.book, purchasedAt: new Date() } },
+      {
+        $set: {
+          purchasedAt: new Date(),
+          expiresAt: null,
+          grantSource: "payment",
+          grantedBy: null,
+          adminNote: null,
+        },
+        $setOnInsert: { user: userId, book: paid.book },
+      },
       { upsert: true }
     );
 
@@ -376,6 +393,8 @@ const listMyPurchases = async (req, res) => {
       purchases: purchases.map((p) => ({
         id: String(p._id),
         purchasedAt: p.purchasedAt ?? p.createdAt,
+        expiresAt: p.expiresAt ?? null,
+        isExpired: Boolean(p.expiresAt && new Date(p.expiresAt).getTime() <= Date.now()),
         book: serializeBookRef(p.book),
       })),
     });
