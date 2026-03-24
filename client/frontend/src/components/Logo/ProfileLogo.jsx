@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { getAvatarGradient } from "../../utils/avatarColor";
 import { useNotification } from "../../context/Notification";
+import { isJwtExpired } from "../../utils/jwt";
 
 function ProfileLogo() {
   const notify                = useNotification();
@@ -14,18 +15,29 @@ function ProfileLogo() {
 
   useEffect(() => {
     const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token || isJwtExpired(token)) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await API.get("/auth/profile");
         setUser(res.data.user ?? res.data);
       } catch (err) {
         console.error("Failed to fetch user:", err);
         notify.error("Session error", "Could not load your profile. Please log in again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/auth/login", { replace: true });
       } finally {
         setLoading(false);
       }
     };
     fetchUser();
-  }, [notify]);
+  }, [navigate, notify]);
 
   // Close on outside click
   useEffect(() => {
