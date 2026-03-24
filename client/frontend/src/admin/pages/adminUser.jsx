@@ -85,7 +85,7 @@ const AdminUser = () => {
     <div className="h-screen bg-[#f5f6fa] flex overflow-hidden">
       <AdminNavbar />
 
-      <main className="flex-1 p-6 md:p-10 overflow-y-scroll">
+      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-scroll pt-20 md:pt-10">
         <div className="max-w-6xl mx-auto space-y-8">
 
           {/* Page Header */}
@@ -97,7 +97,7 @@ const AdminUser = () => {
           </div>
 
           {/* Stat Cards  */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-lg">👤</div>
               <div>

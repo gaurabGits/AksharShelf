@@ -28,3 +28,9 @@ export const fetchPaymentOrders = (params = {}) =>
 
 export const fetchPurchases = (params = {}) =>
   axios.get(`${BASE_URL}/payments/purchases`, { ...authHeaders(), params });
+
+export const grantPurchaseAccess = (data) =>
+  axios.post(`${BASE_URL}/payments/purchases/grant`, data, authHeaders());
+
+export const updatePurchaseAccess = (id, data) =>
+  axios.put(`${BASE_URL}/payments/purchases/${id}`, data, authHeaders());
