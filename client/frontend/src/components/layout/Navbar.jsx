@@ -4,6 +4,7 @@ import { HiOutlineMoon, HiOutlineSun } from "react-icons/hi2";
 import { HiOutlineMenuAlt3, HiOutlineX } from "react-icons/hi";
 import SystemLogo from "../Logo/SystemLogo";
 import ProfileLogo from "../Logo/ProfileLogo";
+import { useAuth } from "../../hooks/useAuth";
 
 function Navbar() {
   const [darkMode, setDarkMode] = useState(false);
@@ -11,7 +12,7 @@ function Navbar() {
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-  const token = localStorage.getItem("token");
+  const { token } = useAuth();
   const lastScrollYRef = useRef(0);
   const tickingRef = useRef(false);
 
@@ -63,6 +64,7 @@ function Navbar() {
   }, [menuOpen]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (menuOpen) setHidden(false);
   }, [menuOpen]);
 
