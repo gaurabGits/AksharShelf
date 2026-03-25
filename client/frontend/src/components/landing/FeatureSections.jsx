@@ -9,16 +9,6 @@ import {
 import { MdOutlinePaid } from "react-icons/md";
 
 const FEATURES = [
-  {
-    icon: <HiOutlineBookmarkSquare />,
-    title: "Personal Bookshelf",
-    desc: "Organize every book into Reading, Completed, or Plan to Read. Your library, your way — always in sync.",
-  },
-  {
-    icon: <HiOutlineUser />,
-    title: "Smart Profile",
-    desc: "Edit your profile, see your shelf stats at a glance, and manage your account — all from one clean page.",
-  },
     {
     icon: <HiOutlineBookOpen />,
     title: "Book Recommendations",
@@ -28,18 +18,7 @@ const FEATURES = [
     icon: <HiOutlineMagnifyingGlass />,
     title: "Instant Search",
     desc: "Can offers to search anything about the PDF content inside the PDF while reading.",
-  },
-  {
-    icon: <HiOutlineStar />,
-    title: "Ratings & Reviews",
-    desc: "Rate books with an interactive star system and leave reviews. See what other readers think before you start.",
-  },
-  {
-    icon: <HiOutlineShieldCheck />,
-    title: "Secure & Free to Start",
-    desc: "Token-based authentication keeps your shelf private. Free books available with no purchase required.",
-  },
-  
+  },  
   {
     icon: <MdOutlinePaid />,
     title: "Purchase Books",
@@ -56,7 +35,7 @@ export default function FeaturesSection() {
             What's inside
           </span>
           <h2 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-            Everything you need to read better
+            Major features of Akshar Shelf
           </h2>
         </div>
 
