@@ -10,6 +10,7 @@ import {
   HiOutlineSparkles,
   HiOutlineStar,
   HiOutlineUsers,
+  HiOutlineBell,
   HiXMark,
 } from "react-icons/hi2";
 import { useAdminAuth } from "../useAdminAuth";
@@ -20,6 +21,7 @@ const navLinks = [
   { to: "/admin/users", icon: HiOutlineUsers, label: "Users" },
   { to: "/admin/reviews", icon: HiOutlineStar, label: "Reviews" },
   { to: "/admin/payments", icon: HiOutlineCreditCard, label: "Payments" },
+  { to: "/admin/notifications", icon: HiOutlineBell, label: "Notifications" },
   { to: "/admin/algorithm", icon: HiOutlineSparkles, label: "Algorithm" },
 ];
 

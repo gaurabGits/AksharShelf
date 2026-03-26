@@ -34,3 +34,10 @@ export const grantPurchaseAccess = (data) =>
 
 export const updatePurchaseAccess = (id, data) =>
   axios.put(`${BASE_URL}/payments/purchases/${id}`, data, authHeaders());
+
+// Notifications
+export const sendAdminNotification = (data) =>
+  axios.post(`${BASE_URL}/notifications`, data, authHeaders());
+
+export const fetchSentNotifications = (params = {}) =>
+  axios.get(`${BASE_URL}/notifications/sent`, { ...authHeaders(), params });

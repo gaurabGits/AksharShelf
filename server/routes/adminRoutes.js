@@ -18,9 +18,17 @@ const {
   grantPurchaseAccess,
   updatePurchaseAccess,
 } = require("../controllers/adminControllers");
+const {
+  createAdminNotification,
+  getAdminSentNotifications,
+} = require("../controllers/notificationControllers");
 
 router.post("/login", loginAdmin);
 router.get("/dashboard", adminAuth, getDashboardStats);
+
+// Notifications (send to users)
+router.post("/notifications", adminAuth, createAdminNotification);
+router.get("/notifications/sent", adminAuth, getAdminSentNotifications);
 
 // User management
 router.get("/users", adminAuth, getAllUsers);

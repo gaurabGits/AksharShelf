@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   HiArrowLeft,
@@ -14,6 +14,7 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineShieldCheck,
   HiOutlineBookOpen,
+  HiOutlineBell,
   HiOutlineClock,
   HiOutlineCheckCircle,
   HiOutlineBookmarkSquare,
@@ -46,6 +47,22 @@ function formatRelativeTime(value) {
   const mo = Math.floor(d / 30);
   if (mo < 12) return `${mo}mo ago`;
   return `${Math.floor(d / 365)}y ago`;
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  } catch {
+    return date.toLocaleString();
+  }
 }
 
 function StarDisplay({ value = 0 }) {
@@ -120,6 +137,7 @@ const NAV_ITEMS = [
   { key: "security",  label: "Security",    icon: HiOutlineShieldCheck        },
   { key: "activity",  label: "My Activity", icon: HiOutlineChatBubbleLeftRight },
   { key: "payments",  label: "Payments",    icon: HiOutlineCreditCard         },
+  { key: "notifications", label: "Notifications", icon: HiOutlineBell         },
   { key: "bookshelf", label: "Bookshelf",   icon: HiOutlineBookOpen           },
 ];
 
@@ -161,7 +179,7 @@ const SHELF_STATS = [
 ];
 
 // Sidebar
-function Sidebar({ user, color, initials, roleLabel, activeTab, setActiveTab, onLogout, shelfCounts }) {
+function Sidebar({ user, color, initials, roleLabel, activeTab, setActiveTab, onLogout, shelfCounts, unreadCount }) {
   const total = shelfCounts.reading + shelfCounts.completed + shelfCounts.planned;
 
   return (
@@ -226,6 +244,14 @@ function Sidebar({ user, color, initials, roleLabel, activeTab, setActiveTab, on
                       : "bg-gray-100 dark:bg-gray-800 text-gray-500"
                   }`}>
                     {total}
+                  </span>
+                ) : item.key === "notifications" && unreadCount > 0 ? (
+                  <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    active
+                      ? "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                  }`}>
+                    {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 ) : active ? (
                   <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0" />
@@ -754,6 +780,258 @@ function ActivityTab({ activity, setActivity, loading, error }) {
   );
 }
 
+// Tab: Notifications
+function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
+  const notify = useNotification();
+  const navigate = useNavigate();
+  const topIdRef = useRef("");
+
+  const [filter, setFilter] = useState(unreadCount > 0 ? "unread" : "all");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [items, setItems] = useState([]);
+  const [busy, setBusy] = useState({ type: "", id: "" });
+
+  const load = async (nextFilter = filter, { silent = false } = {}) => {
+    if (silent) setRefreshing(true);
+    else setLoading(true);
+
+    if (!silent) setError("");
+    try {
+      const { data } = await API.get("/notifications", {
+        params: { limit: 30, unread: nextFilter === "unread" ? 1 : 0 },
+      });
+      const list = data?.notifications ?? [];
+
+      const nextTopId = String(list?.[0]?.id || "");
+      if (silent && topIdRef.current && nextTopId && nextTopId !== topIdRef.current) {
+        notify.info("New notification", "New updates arrived. List refreshed.");
+      }
+      topIdRef.current = nextTopId || topIdRef.current;
+
+      setItems(list);
+      onUnreadCount?.(Number(data?.unreadCount) || 0);
+    } catch (err) {
+      const message = err.response?.data?.message ?? "Failed to load notifications.";
+      if (!silent) setError(message);
+    } finally {
+      if (silent) setRefreshing(false);
+      else setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load(filter, { silent: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
+  useEffect(() => {
+    const id = setInterval(() => load(filter, { silent: true }), 25000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
+
+  const handleMarkRead = async (id) => {
+    setBusy({ type: "read", id });
+    try {
+      await API.patch(`/notifications/${id}/read`);
+      setItems((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
+      );
+      onUnreadCount?.(Math.max(0, Number(unreadCount) - 1));
+    } catch (err) {
+      notify.error("Failed", err.response?.data?.message ?? "Could not mark as read.");
+    } finally {
+      setBusy({ type: "", id: "" });
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setBusy({ type: "readAll", id: "all" });
+    try {
+      await API.patch("/notifications/read-all");
+      setItems((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+      onUnreadCount?.(0);
+      notify.success("Done", "All notifications marked as read.");
+    } catch (err) {
+      notify.error("Failed", err.response?.data?.message ?? "Could not mark all as read.");
+    } finally {
+      setBusy({ type: "", id: "" });
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this notification?")) return;
+    setBusy({ type: "delete", id });
+    try {
+      await API.delete(`/notifications/${id}`);
+      setItems((prev) => prev.filter((n) => n.id !== id));
+      notify.success("Deleted", "Notification removed.");
+    } catch (err) {
+      notify.error("Failed", err.response?.data?.message ?? "Could not delete notification.");
+    } finally {
+      setBusy({ type: "", id: "" });
+    }
+  };
+
+  const hasUnread = items.some((n) => !n.readAt);
+
+  const levelStyles = (level) => {
+    if (level === "critical") return "bg-red-50 border-red-100 text-red-600 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400";
+    if (level === "warning") return "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-950/30 dark:border-amber-900/40 dark:text-amber-400";
+    return "bg-indigo-50 border-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:border-indigo-900/40 dark:text-indigo-400";
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h2 className="text-base font-bold text-gray-900 dark:text-white">Notifications</h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Security alerts, admin notices, and other updates.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-3 py-2 text-xs font-semibold transition-colors ${
+                filter === "all"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilter("unread")}
+              className={`px-3 py-2 text-xs font-semibold transition-colors ${
+                filter === "unread"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              Unread
+            </button>
+          </div>
+
+          <button
+            onClick={handleMarkAllRead}
+            disabled={!hasUnread || busy.type === "readAll"}
+            className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-semibold hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {busy.type === "readAll" ? "Markingâ€¦" : "Mark all read"}
+          </button>
+
+          {refreshing ? (
+            <span className="text-[11px] text-gray-400">Refreshingâ€¦</span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
+      {loading ? (
+        <div className="space-y-3 animate-pulse">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 rounded-xl bg-gray-100 dark:bg-gray-800" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="rounded-xl border border-red-100 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-300 p-4 text-sm">
+          {error}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-10 text-gray-400">
+          <HiOutlineBell className="text-4xl mx-auto mb-2 opacity-30" />
+          <p className="text-sm font-medium">No notifications</p>
+          <p className="text-xs mt-1">Youâ€™ll see security and admin updates here.</p>
+          <button
+            onClick={() => onGoToTab?.("security")}
+            className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Go to Security
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((n) => {
+            const isUnread = !n.readAt;
+            return (
+              <div
+                key={n.id}
+                className={`rounded-xl border p-4 flex flex-col gap-2 ${
+                  isUnread
+                    ? "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+                    : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 opacity-90"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex items-start gap-2">
+                    <span className={`mt-0.5 w-2.5 h-2.5 rounded-full border ${levelStyles(n.level)}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {n.title}
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {formatRelativeTime(n.createdAt)}{" "}
+                        <span className="text-gray-300 dark:text-gray-700">|</span>{" "}
+                        {formatDateTime(n.createdAt)}{" "}
+                        <span className="text-gray-300 dark:text-gray-700">|</span>{" "}
+                        {n.source === "admin" ? "Admin" : "System"}{" "}
+                        <span className="text-gray-300 dark:text-gray-700">|</span>{" "}
+                        {n.readAt ? `Read ${formatDateTime(n.readAt)}` : "Unread"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {n.link ? (
+                      <button
+                        onClick={() => navigate(n.link)}
+                        className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-[11px] font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        View
+                      </button>
+                    ) : null}
+
+                    {isUnread ? (
+                      <button
+                        onClick={() => handleMarkRead(n.id)}
+                        disabled={busy.type === "read" && busy.id === n.id}
+                        className="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        {busy.type === "read" && busy.id === n.id ? "â€¦" : "Mark read"}
+                      </button>
+                    ) : null}
+
+                    <button
+                      onClick={() => handleDelete(n.id)}
+                      disabled={busy.type === "delete" && busy.id === n.id}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
+                      title="Delete"
+                    >
+                      <HiOutlineTrash className="text-base" />
+                    </button>
+                  </div>
+                </div>
+
+                {n.message ? (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                    {n.message}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Tab: Bookshelf
 function BookshelfTab({ counts, loading }) {
   const navigate = useNavigate();
@@ -859,6 +1137,9 @@ export default function ProfilePage() {
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const unreadCountRef = useRef(0);
+  const unreadInitRef = useRef(false);
   const urlTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(() => normalizeTabKey(urlTab));
 
@@ -871,6 +1152,25 @@ export default function ProfilePage() {
 
   const [form, setForm]       = useState({ name: "", email: "" });
   const [pwdForm, setPwdForm] = useState({ current: "", password: "", confirmPassword: "" });
+
+  const refreshUnreadCount = async (isActive = true, { toastOnIncrease = false } = {}) => {
+    try {
+      const { data } = await API.get("/notifications/unread-count");
+      const next = Number(data?.unreadCount) || 0;
+      if (!isActive) return;
+
+      if (toastOnIncrease && unreadInitRef.current && next > unreadCountRef.current) {
+        const diff = next - unreadCountRef.current;
+        notify.info("New notification", diff === 1 ? "You have 1 new notification." : `You have ${diff} new notifications.`);
+      }
+
+      setUnreadCount(next);
+      unreadCountRef.current = next;
+      unreadInitRef.current = true;
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     const normalized = normalizeTabKey(urlTab);
@@ -950,7 +1250,17 @@ export default function ProfilePage() {
       finally { if (isActive) setLoadingShelf(false); }
     })();
 
-    return () => { isActive = false; };
+    // Unread notifications
+    refreshUnreadCount(isActive);
+    const unreadInterval = setInterval(
+      () => refreshUnreadCount(isActive, { toastOnIncrease: true }),
+      30000
+    );
+
+    return () => {
+      isActive = false;
+      clearInterval(unreadInterval);
+    };
   }, [navigate]);
 
   const handleSave = async () => {
@@ -995,6 +1305,7 @@ export default function ProfilePage() {
       await API.put("/auth/profile/password", { currentPassword: current, newPassword: password });
       setPwdForm({ current: "", password: "", confirmPassword: "" });
       notify.success("Password changed", "Your password has been updated.");
+      refreshUnreadCount(true);
     } catch (err) {
       notify.error("Failed", err.response?.data?.message ?? "Could not update password.");
     } finally { setSavingPwd(false); }
@@ -1048,6 +1359,7 @@ export default function ProfilePage() {
           setActiveTab={handleSelectTab}
           onLogout={handleLogout}
           shelfCounts={shelfCounts}
+          unreadCount={unreadCount}
         />
 
         <div className="w-full md:flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 sm:p-6 md:min-h-[400px]">
@@ -1055,6 +1367,13 @@ export default function ProfilePage() {
           {activeTab === "security"  && <SecurityTab pwdForm={pwdForm} setPwdForm={setPwdForm} savingPwd={savingPwd} onSave={handlePasswordSave} />}
           {activeTab === "activity"  && <ActivityTab activity={activity} setActivity={setActivity} loading={loadingActivity} error={activityError} />}
           {activeTab === "payments"  && <PaymentsTab />}
+          {activeTab === "notifications" && (
+            <NotificationsTab
+              unreadCount={unreadCount}
+              onUnreadCount={setUnreadCount}
+              onGoToTab={handleSelectTab}
+            />
+          )}
           {activeTab === "bookshelf" && <BookshelfTab counts={shelfCounts} loading={loadingShelf} />}
         </div>
       </div>

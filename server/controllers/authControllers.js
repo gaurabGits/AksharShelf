@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const Review = require("../models/review");
 const Bookshelf = require("../models/bookshelf");
+const Notification = require("../models/notification");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -290,6 +291,24 @@ const updatePassword = async (req, res) => {
 
     user.password = newPassword;
     await user.save();
+
+    // Persist a security notification for the user (non-blocking).
+    try {
+      await Notification.create({
+        recipient: user._id,
+        source: "system",
+        category: "security",
+        event: "password_changed",
+        level: "warning",
+        title: "Password changed",
+        message:
+          "Your account password was changed. If you didn’t do this, please contact support immediately.",
+      });
+    } catch (notifyError) {
+      // Avoid failing password change if notification storage fails.
+      // eslint-disable-next-line no-console
+      console.error("Failed to create password-change notification:", notifyError?.message || notifyError);
+    }
 
     res.json({ message: "Password changed successfully." });
   } catch (error) {

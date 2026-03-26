@@ -15,6 +15,7 @@ User side:
 - Bookmarks
 - Reviews and ratings
 - Profile page (including a Payments section)
+- Notifications in Profile (security + admin notices)
 - Recommendations: content-based + collaborative
 
 Admin panel:
@@ -22,6 +23,7 @@ Admin panel:
 - Manage users (block/unblock/delete)
 - Manage books (add/edit/delete + upload PDF/cover)
 - Manage reviews (view/delete)
+- Send notifications to all users or a specific user
 - Payments page (orders + purchases + revenue stats)
 
 ## Project structure
@@ -86,6 +88,66 @@ Admin:
 - `POST /api/admin/login`
 - `GET /api/admin/payments/orders` orders + revenue stats
 - `GET /api/admin/payments/purchases` purchases list
+
+## Notifications (User + Admin)
+
+This project includes an in-app notifications system so:
+- Users can see security alerts (example: password changed)
+- Admin can send important notices to all users or a specific user
+
+### User notifications (API)
+
+Base path: `/api/notifications` (requires user JWT)
+
+- `GET /api/notifications?limit=30&unread=1` list my notifications (`unread=1` filters unread only)
+- `GET /api/notifications/unread-count` unread count badge
+- `PATCH /api/notifications/read-all` mark all as read
+- `PATCH /api/notifications/:id/read` mark a single notification as read
+- `DELETE /api/notifications/:id` delete a single notification
+
+Returned notification fields include: `title`, `message`, `level` (`info|warning|critical`), `source` (`system|admin`), `createdAt`, and `readAt`.
+
+### Password change notification (system)
+
+When a user changes password successfully (`PUT /api/auth/profile/password`), the server automatically creates a notification:
+- `category: security`
+- `event: password_changed`
+- `level: warning`
+
+### Admin notifications (API)
+
+Admin base path: `/api/admin/notifications` (requires admin JWT)
+
+- `POST /api/admin/notifications` send a notice
+- `GET /api/admin/notifications/sent?limit=25` see sent history (grouped by send action)
+
+`POST /api/admin/notifications` payload:
+
+```json
+{
+  "audience": "all",
+  "userIds": [],
+  "category": "notice",
+  "level": "info",
+  "title": "Maintenance notice",
+  "message": "We will be down for 10 minutes.",
+  "link": "/books"
+}
+```
+
+To notify specific users, set `"audience": "users"` and include their ids in `userIds` (example: `["65f..."]`).
+
+### Frontend UI locations
+
+User:
+- Profile page tab: `/profile?tab=notifications`
+- Shows unread badge, full date/time, read/unread status, and supports mark-read / mark-all / delete
+- Unread badge auto-updates (polling), and the Notifications tab auto-refreshes while open
+
+Admin:
+- Admin page: `/admin/notifications`
+- Send to all users or pick a specific user
+- Shows sent history (date/time + recipients + read count)
 
 ## Paid books: how access works (dummy payment)
 

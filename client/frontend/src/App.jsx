@@ -9,6 +9,7 @@ import AdminBook from "./admin/pages/adminBook";
 import AdminReview from "./admin/pages/adminReview";
 import AdminAlgorithm from "./admin/pages/adminAlgorithm";
 import AdminPayments from "./admin/pages/adminPayments";
+import AdminNotifications from "./admin/pages/adminNotifications";
 
 function App() {
   return (
@@ -62,6 +63,14 @@ function App() {
           element={
             <AdminRoutes>
               <AdminAlgorithm />
+            </AdminRoutes>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <AdminRoutes>
+              <AdminNotifications />
             </AdminRoutes>
           }
         />
