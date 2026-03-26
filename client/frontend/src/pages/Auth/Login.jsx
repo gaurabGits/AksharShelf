@@ -80,9 +80,10 @@ function Login() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 px-4 transition-all duration-200">
-      <div className="w-full max-w-4xl">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden flex">
+    <div className="bg-white dark:bg-gray-900 transition-all duration-200">
+      <div className="page-container flex items-start justify-center py-10 sm:py-12 min-h-[calc(100vh-4rem)] supports-[height:100svh]:min-h-[calc(100svh-4rem)] sm:items-center">
+        <div className="w-full max-w-4xl">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden flex border border-gray-200 dark:border-gray-700">
 
           {/* ── Left Panel ── */}
           <div className="hidden md:flex md:w-5/12 bg-indigo-600 dark:bg-indigo-700 p-8 flex-col justify-between relative overflow-hidden">
@@ -230,6 +231,7 @@ function Login() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
 

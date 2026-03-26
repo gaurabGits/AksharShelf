@@ -3,7 +3,7 @@ import {
   HiOutlineMagnifyingGlass,
   HiOutlineBookOpen,
 } from "react-icons/hi2";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../services/api";
 import BookCard, { BookCardSkeleton } from "../components/BookCard";
 
@@ -11,12 +11,16 @@ const SKELETON_COUNT = 8;
 
 export default function BooksPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [books, setBooks]       = useState([]);
   const [allBooks, setAllBooks] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
-  const [filter, setFilter]     = useState("all");
+  const [filter, setFilter] = useState(() => {
+    const initial = String(searchParams.get("filter") || "all").toLowerCase();
+    return initial === "free" || initial === "paid" || initial === "all" ? initial : "all";
+  });
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -97,8 +101,9 @@ export default function BooksPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 py-10 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col gap-10">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <div className="page-container py-10">
+        <div className="flex flex-col gap-10">
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -140,7 +145,7 @@ export default function BooksPage() {
                 </h2>
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {recentBooks.map((book) => (
                 <MiniCard key={book._id} book={book} />
               ))}
@@ -179,7 +184,7 @@ export default function BooksPage() {
         </div>
 
         {/* Main Book Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {loading
             ? Array(SKELETON_COUNT).fill(0).map((_, i) => <BookCardSkeleton key={i} />)
             : filteredBooks.map((book) => (
@@ -213,6 +218,7 @@ export default function BooksPage() {
           </div>
         )}
 
+        </div>
       </div>
     </div>
   );

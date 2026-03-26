@@ -23,9 +23,9 @@ function BookCard({ book, tab, onMove, onRemove, busy }) {
   const moveOptions = ["reading", "completed", "planned"].filter((s) => s !== tab);
   const showMoves = tab !== "completed";
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all group">
-      <Link to={`/books/${book._id}`} className="flex items-center gap-4 min-w-0 flex-1">
-        <div className={`w-14 h-20 rounded-lg flex-shrink-0 bg-gradient-to-br ${getColor(book.title)} flex items-center justify-center shadow-sm overflow-hidden`}>
+    <div className="flex flex-col gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all group sm:flex-row sm:items-center sm:gap-4">
+      <Link to={`/books/${book._id}`} className="flex items-center gap-4 min-w-0 w-full sm:flex-1">
+        <div className={`w-12 h-16 sm:w-14 sm:h-20 rounded-lg flex-shrink-0 bg-gradient-to-br ${getColor(book.title)} flex items-center justify-center shadow-sm overflow-hidden`}>
           {book.coverImage ? (
             <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover" />
           ) : (
@@ -35,14 +35,17 @@ function BookCard({ book, tab, onMove, onRemove, busy }) {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{book.title}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{book.author ?? "Unknown Author"}</p>
+          <span className={`mt-2 inline-flex sm:hidden text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${TAB_STYLE[tab].badge}`}>
+            {tab === "reading" ? "Reading" : tab === "completed" ? "Completed" : "Planned"}
+          </span>
         </div>
       </Link>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${TAB_STYLE[tab].badge}`}>
+      <div className="flex w-full sm:w-auto items-center justify-end gap-2 sm:flex-shrink-0">
+        <span className={`hidden sm:inline-flex text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${TAB_STYLE[tab].badge}`}>
           {tab === "reading" ? "Reading" : tab === "completed" ? "Completed" : "Planned"}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           {showMoves && moveOptions.map((status) => (
             <button
               key={status}
@@ -51,7 +54,22 @@ function BookCard({ book, tab, onMove, onRemove, busy }) {
               className="px-2.5 py-1 text-[10px] font-semibold rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-white dark:hover:bg-gray-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               title={`Move to ${status}`}
             >
-              {status === "reading" ? "To Reading" : status === "completed" ? "To Completed" : "To Planned"}
+              {status === "reading" ? (
+                <>
+                  <span className="sm:hidden">Reading</span>
+                  <span className="hidden sm:inline">To Reading</span>
+                </>
+              ) : status === "completed" ? (
+                <>
+                  <span className="sm:hidden">Completed</span>
+                  <span className="hidden sm:inline">To Completed</span>
+                </>
+              ) : (
+                <>
+                  <span className="sm:hidden">Planned</span>
+                  <span className="hidden sm:inline">To Planned</span>
+                </>
+              )}
             </button>
           ))}
           <button
@@ -91,13 +109,19 @@ function Empty({ tab }) {
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 animate-pulse">
-      <div className="w-14 h-20 rounded-lg bg-gray-300 dark:bg-gray-700 flex-shrink-0" />
-      <div className="flex-1 flex flex-col gap-2">
-        <div className="h-4 w-3/4 bg-gray-300 dark:bg-gray-700 rounded-full" />
-        <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-600 rounded-full" />
+    <div className="flex flex-col gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 animate-pulse sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex items-center gap-4 min-w-0 w-full sm:flex-1">
+        <div className="w-12 h-16 sm:w-14 sm:h-20 rounded-lg bg-gray-300 dark:bg-gray-700 flex-shrink-0" />
+        <div className="flex-1 flex flex-col gap-2 min-w-0">
+          <div className="h-4 w-3/4 bg-gray-300 dark:bg-gray-700 rounded-full" />
+          <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-600 rounded-full" />
+          <div className="h-5 w-20 bg-gray-200 dark:bg-gray-600 rounded-full sm:hidden mt-1" />
+        </div>
       </div>
-      <div className="h-6 w-16 bg-gray-300 dark:bg-gray-700 rounded-full flex-shrink-0" />
+      <div className="flex w-full sm:w-auto items-center justify-end gap-2 sm:flex-shrink-0">
+        <div className="hidden sm:block h-6 w-16 bg-gray-300 dark:bg-gray-700 rounded-full" />
+        <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded-full" />
+      </div>
     </div>
   );
 }
@@ -213,50 +237,51 @@ export default function MyLibraryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 py-10 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col gap-7">
-        {/* Title */}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Library</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {total} {total === 1 ? 'book' : 'books'} on your shelf
-          </p>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col flex-1 overflow-hidden relative z-10">
-          <div className="flex border-b border-gray-200 dark:border-gray-800">
-            {TABS.map((t) => {
-              const active = tab === t.key;
-              return (
-                <button 
-                  key={t.key} 
-                  onClick={() => {
-                    setTab(t.key);
-                    setSearchParams({ tab: t.key });
-                  }}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-4 text-sm font-medium border-b-2 -mb-px transition-all ${
-                    active 
-                      ? TAB_STYLE[t.key].active 
-                      : "border-transparent text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                  }`}
-                >
-                  <span className="text-base">{t.icon}</span>
-                  <span className="hidden sm:inline">{t.label}</span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1 ${
-                    active 
-                      ? TAB_STYLE[t.key].badge 
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-                  }`}>
-                    {counts[t.key]}
-                  </span>
-                </button>
-              );
-            })}
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <div className="page-container py-8 sm:py-10">
+        <div className="flex flex-col gap-7">
+          {/* Title */}
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">My Library</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {total} {total === 1 ? "book" : "books"} on your shelf
+            </p>
           </div>
+ 
+          {/* Card */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col flex-1 overflow-hidden relative z-10">
+            <div className="flex border-b border-gray-200 dark:border-gray-800">
+              {TABS.map((t) => {
+                const active = tab === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => {
+                      setTab(t.key);
+                      setSearchParams({ tab: t.key });
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 px-2.5 py-3.5 sm:px-4 sm:py-4 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-all ${
+                      active
+                        ? TAB_STYLE[t.key].active
+                        : "border-transparent text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    <span className="text-base">{t.icon}</span>
+                    <span className="hidden sm:inline">{t.label}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1 ${
+                      active
+                        ? TAB_STYLE[t.key].badge
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+                    }`}>
+                      {counts[t.key]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
           {/* Book list */}
-          <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3">
             {loading
               ? Array(4).fill(0).map((_, i) => <SkeletonRow key={i} />)
               : shelf[tab].length === 0
@@ -274,6 +299,7 @@ export default function MyLibraryPage() {
             }
           </div>
 
+          </div>
         </div>
       </div>
     </div>

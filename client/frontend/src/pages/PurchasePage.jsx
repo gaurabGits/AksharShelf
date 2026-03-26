@@ -171,8 +171,9 @@ function PurchasePage() {
   const wasJustPaid = alreadyHasAccess && String(order?.status || "").toLowerCase() === "paid";
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 px-4 py-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <div className="page-container py-8">
+        <div className="max-w-3xl mx-auto">
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
           <div className="p-6 border-b border-gray-100 dark:border-gray-800">
             <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Checkout</h1>
@@ -324,6 +325,7 @@ function PurchasePage() {
               </>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>

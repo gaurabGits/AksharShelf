@@ -36,8 +36,8 @@ function makeTextRenderer() {
 // NOT memo'd — re-renders when customTextRenderer or scale changes.
 // The key on <Page> forces react-pdf to fully remount the page
 // when searchQuery changes, so customTextRenderer is called fresh.
-function PDFPage({ num, scale, setRef, customTextRenderer }) {
-  const w = Math.round(PAGE_W * scale);
+function PDFPage({ num, width, setRef, customTextRenderer }) {
+  const w = Math.max(1, Math.round(width));
   return (
     <div
       ref={(el) => setRef(el, num)}
@@ -135,6 +135,7 @@ export default function ReaderPage() {
   const [searching,     setSearching]     = useState(false);
   const [textLayerReady, setTextLayerReady] = useState(false);
   const [bookError,     setBookError]     = useState(null);
+  const [scrollAreaWidth, setScrollAreaWidth] = useState(null);
 
   const token    = localStorage.getItem("token");
   const PROGRESS_KEY = `reader-progress-${id}`;                          // ── ADDED
@@ -150,6 +151,31 @@ export default function ReaderPage() {
     cMapPacked: true,
     standardFontDataUrl: "https://unpkg.com/pdfjs-dist/standard_fonts/",
   }), []);
+
+  // Track the available width so pages fit on phones/tablets without horizontal scrolling at 100%.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const update = () => setScrollAreaWidth(el.clientWidth || 0);
+    update();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(update);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const basePageWidth = useMemo(() => {
+    const available = (scrollAreaWidth ?? PAGE_W) - 24; // small gutter so it doesn't touch edges
+    return Math.min(PAGE_W, Math.max(280, available));
+  }, [scrollAreaWidth]);
+
+  const pageWidth = useMemo(() => Math.round(basePageWidth * scale), [basePageWidth, scale]);
 
   // ─── Scroll to page ──────────────────────────────────────────────────────────
 
@@ -696,7 +722,7 @@ export default function ReaderPage() {
                     <PDFPage
                       key={num}
                       num={num}
-                      scale={scale}
+                      width={pageWidth}
                       setRef={setRef}
                       customTextRenderer={customTextRenderer}
                     />

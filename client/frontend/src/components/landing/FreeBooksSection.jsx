@@ -56,7 +56,8 @@ function FreeBooksSection() {
   const scroll = (dir) => {
     const el = rowRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir === "left" ? -360 : 360, behavior: "smooth" });
+    const amount = Math.min(420, Math.max(240, Math.round(el.clientWidth * 0.85)));
+    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
     setTimeout(updateArrows, 350);
   };
 
@@ -64,22 +65,22 @@ function FreeBooksSection() {
     <>
       <style>{STYLES}</style>
 
-      <section ref={sectionRef} className="py-14 bg-gray-50 dark:bg-gray-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <section ref={sectionRef} className="bg-gray-50 dark:bg-gray-950 section-pad">
+        <div className="page-container">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2.5">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Free Books</h2>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
                 No cost
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <Link to="/books" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+            <div className="flex items-center gap-3 shrink-0">
+              <Link to="/books?filter=free" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 whitespace-nowrap">
                 See all <HiArrowRight className="text-sm" />
               </Link>
-              <div className="flex gap-1.5">
+              <div className="hidden sm:flex gap-1.5">
                 <button onClick={() => scroll("left")} disabled={!canLeft}
                   className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
                   <HiChevronLeft />
@@ -94,24 +95,24 @@ function FreeBooksSection() {
 
           {/* Skeleton */}
           {loading && (
-            <div className="flex gap-4 overflow-hidden">
+            <div className="flex gap-3 overflow-hidden sm:gap-4">
               {Array(6).fill(0).map((_, i) => (
-                <div key={i} className="flex-shrink-0 w-44 h-64 rounded-xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
+                <div key={i} className="h-56 w-36 flex-shrink-0 rounded-xl bg-gray-200 animate-pulse dark:bg-gray-800 sm:h-64 sm:w-44" />
               ))}
             </div>
           )}
 
           {/* Scroll row */}
           {!loading && books.length > 0 && (
-            <div ref={rowRef} onScroll={updateArrows} className="scroll-row flex gap-4 overflow-x-auto pb-2">
+            <div ref={rowRef} onScroll={updateArrows} className="scroll-row flex gap-3 overflow-x-auto pb-2 sm:gap-4">
               {books.map((book, i) => (
                 <Link
                   key={book._id}
                   to={`/books/${book._id}`}
-                  className={`group flex-shrink-0 w-44 no-underline ${visible ? "slide-right" : "opacity-0"}`}
+                  className={`group w-36 flex-shrink-0 no-underline sm:w-44 ${visible ? "slide-right" : "opacity-0"}`}
                   style={visible ? { animationDelay: `${i * 60}ms` } : {}}
                 >
-                  <div className="relative w-44 h-64 rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300">
+                  <div className="relative h-56 w-36 overflow-hidden rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:h-64 sm:w-44">
 
                     {/* Cover image — full, no tint */}
                     {book.coverImage ? (

@@ -148,8 +148,8 @@ function Badge({ children, color = "gray" }) {
 
 function Skeleton() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 py-8 px-4 animate-pulse">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-white dark:bg-gray-950 animate-pulse">
+      <div className="page-container py-8">
         <div className="h-3 w-28 bg-gray-200 dark:bg-gray-800 rounded-full" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-4">
@@ -228,7 +228,7 @@ function Skeleton() {
         {/* Bottom recommendations */}
         <div className="mt-8 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
           <div className="h-5 w-44 bg-gray-200 dark:bg-gray-800 rounded-full mb-4" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
                 <div className="h-44 bg-gray-200 dark:bg-gray-800" />
@@ -636,7 +636,7 @@ export default function BookDetailPage() {
       )}
 
       <div className="min-h-screen bg-white dark:bg-gray-950">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="page-container py-8">
 
           {/* Back */}
           <button
@@ -669,7 +669,7 @@ export default function BookDetailPage() {
               </div>
 
               {/* Details */}
-              <div className="flex-1 p-6 flex flex-col gap-3 min-w-0">
+              <div className="flex-1 p-4 sm:p-6 flex flex-col gap-3 min-w-0">
 
                 {/* Title + Bookmark */}
                 <div className="flex items-start justify-between gap-3">
@@ -751,12 +751,12 @@ export default function BookDetailPage() {
                 </div>
 
                 {/* CTA */}
-                <div className="flex items-center gap-2.5 pt-1 mt-auto flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 pt-1 mt-auto">
                   {canRead ? (
                     <button
                       type="button"
                       onClick={() => navigate(`/read/${book._id}`)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
+                      className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
                     >
                       <HiOutlineBookOpen /> Read Now
                     </button>
@@ -764,13 +764,13 @@ export default function BookDetailPage() {
                     <button
                       type="button"
                       onClick={() => navigate(`/purchase/${book._id}`)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
+                      className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
                     >
                       Buy · Rs. {book.price}
                     </button>
                   )}
                   <span
-                    className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border ${
+                    className={`inline-flex w-full sm:w-auto justify-center items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border ${
                       canRead
                         ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800/40"
                         : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:border-amber-800/40"

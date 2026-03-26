@@ -78,12 +78,12 @@ function HeroSection({ onStartFree }) {
         }
       `}</style>
 
-      <section className="relative overflow-hidden bg-white dark:bg-gray-950 min-h-[90vh] flex items-center">
+      <section className="relative flex min-h-[80vh] items-center overflow-hidden bg-white dark:bg-gray-950 sm:min-h-[90vh]">
 
         {/* Orbs */}
         <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
-          <div className="orb  absolute -top-32  -right-32 w-[600px] h-[600px] rounded-full bg-indigo-100 dark:bg-indigo-600/20 blur-[120px]" />
-          <div className="orb2 absolute -bottom-24 -left-24  w-[400px] h-[400px] rounded-full bg-violet-100 dark:bg-violet-600/15 blur-[100px]" />
+          <div className="orb absolute -top-24 -right-24 h-[340px] w-[340px] rounded-full bg-indigo-100 blur-[100px] dark:bg-indigo-600/20 sm:-top-32 sm:-right-32 sm:h-[460px] sm:w-[460px] sm:blur-[120px] lg:h-[600px] lg:w-[600px]" />
+          <div className="orb2 absolute -bottom-20 -left-20 h-[260px] w-[260px] rounded-full bg-violet-100 blur-[90px] dark:bg-violet-600/15 sm:-bottom-24 sm:-left-24 sm:h-[340px] sm:w-[340px] sm:blur-[100px] lg:h-[420px] lg:w-[420px]" />
         </div>
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.022] dark:opacity-[0.04]"
@@ -93,12 +93,12 @@ function HeroSection({ onStartFree }) {
           }}
         />
 
-        <div className="relative max-w-6xl mx-auto px-6 py-20 pt-5 w-full">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="page-container relative w-full py-16 sm:py-20 lg:py-24">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
 
-            {/* ── LEFT ── */}
+            {/* â”€â”€ LEFT â”€â”€ */}
             <div className="flex flex-col gap-8">
-              <h1 className="fade-up d1 text-4xl sm:text-5xl lg:text-[56px] font-bold text-gray-900 dark:text-white leading-[1.12] tracking-tight">
+              <h1 className="fade-up d1 text-3xl font-bold leading-[1.12] tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:text-[56px]">
                 Your personal{" "}
                 <span className="relative inline-block">
                   <span className="text-indigo-600 dark:text-indigo-400">reading shelf</span>
@@ -109,20 +109,20 @@ function HeroSection({ onStartFree }) {
                 {" "}awaits
               </h1>
 
-              <p className="fade-up d2 text-base text-gray-500 dark:text-gray-400 leading-relaxed max-w-[400px]">
+              <p className="fade-up d2 max-w-xl text-sm leading-relaxed text-gray-500 dark:text-gray-400 sm:text-base">
                Discover, organize, and enjoy huge number of books in one clean, distraction free space built for curious minds.
               </p>
 
               <div className="fade-up d3 flex flex-wrap items-center gap-3">
                 <Link
                   to="/books"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/50 sm:w-auto"
                 >
                   Browse Books <HiArrowRight />
                 </Link>
                 <button
                   onClick={onStartFree}
-                  className="inline-flex items-center gap-2 px-6 py-3 border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-medium rounded-xl transition-all hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-700 transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-800 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 sm:w-auto"
                 >
                   Start for free
                 </button>
@@ -142,11 +142,9 @@ function HeroSection({ onStartFree }) {
               )}
             </div>
 
-            {/* ── RIGHT — Fanned Cards ── */}
-            <div className="relative">
-              <div className="absolute right-0 "style={{ top: "10%", transform: "translateY(-50%)" }}>
-                <FannedBooks />
-              </div>
+            {/* â”€â”€ RIGHT â€” Fanned Cards â”€â”€ */}
+            <div className="relative flex justify-center lg:justify-end">
+              <FannedBooks />
             </div>
             
           </div>

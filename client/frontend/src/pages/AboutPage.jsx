@@ -67,9 +67,17 @@ const STACK = [
   { name: "Mongoose",    role: "ODM"         },
 ];
 
+const ARCH_FLOW = [
+  { label: "Browser", sub: "React SPA" },
+  { label: "Axios", sub: "HTTP + JWT" },
+  { label: "Express", sub: "REST API" },
+  { label: "Mongoose", sub: "ODM Layer" },
+  { label: "MongoDB", sub: "Database" },
+];
+
 
 function Divider() {
-  return <div className="h-px w-full bg-gray-100 dark:bg-gray-800 my-16" />;
+  return <div className="h-px w-full bg-gray-100 dark:bg-gray-800 my-10 sm:my-16" />;
 }
 
 // Main
@@ -80,18 +88,21 @@ export default function AboutPage() {
     <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white">
 
       {/* Nav bar */}
-      <div className="sticky top-0 z-10 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md px-6 py-3.5 flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-        >
-          <HiArrowLeft /> Back
-        </button>
-        <span className="text-gray-200 dark:text-gray-800">/</span>
-        <span className="text-sm font-medium text-gray-900 dark:text-white">About</span>
+      <div className="sticky top-16 z-10 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md">
+        <div className="page-container py-3.5 flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <HiArrowLeft /> Back
+          </button>
+          <span className="text-gray-200 dark:text-gray-800">/</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">About</span>
+        </div>
       </div>
 
-      <main className="max-w-4xl mx-auto px-6 py-16">
+      <main className="page-container py-12 sm:py-16 lg:py-20">
+        <div className="mx-auto max-w-4xl">
         <section>
           <Fade delay={0}>
             <div className="inline-flex items-center gap-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60 px-3 py-1.5 rounded-full mb-6">
@@ -110,7 +121,7 @@ export default function AboutPage() {
           </Fade>
 
           <Fade delay={140}>
-            <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm">
+            <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm text-justify">
               Akshar Shelf is a full-stack reading platform where you can discover books,
               manage your personal bookshelf, write reviews, and get personalised recommendations
               all in a clean, distraction-free interface.
@@ -146,7 +157,7 @@ export default function AboutPage() {
                   Bachelor of Computer Applications · 6th Semester
                 </p>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 leading-relaxed">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 leading-relaxed text-justify">
                   Built this project to explore full-stack development with the MERN stack,
                   combining a React frontend, Node/Express backend, MongoDB database, and
                   real-time Socket.io features into a cohesive, production-ready application.
@@ -206,7 +217,7 @@ export default function AboutPage() {
                   </div>
                   <div className="min-w-0 pt-0.5">
                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{label}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-relaxed">{desc}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-relaxed text-justify">{desc}</p>
                   </div>
                 </div>
               </Fade>
@@ -238,45 +249,63 @@ export default function AboutPage() {
             ))}
           </div>
 
-            {/* Architecture flow */}
-            <Fade delay={200}>
-                <div className="w-full mt-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/60 overflow-hidden">
+          {/* Architecture flow */}
+          <Fade delay={200}>
+            <div className="w-full mt-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/60 overflow-hidden">
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">
+                  System Architecture
+                </p>
+              </div>
 
-                 {/* Header */}
-                 <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">
-                     System Architecture 
-                 </p>
-                 </div>
+              <div className="p-4">
+                {/* Mobile: vertical */}
+                <div className="flex flex-col items-stretch gap-2 sm:hidden">
+                  {ARCH_FLOW.map((item, i) => (
+                    <div key={item.label}>
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/60">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{item.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.sub}</p>
+                        </div>
+                        <span className="text-xs font-semibold text-gray-400">{i + 1}</span>
+                      </div>
 
-                  <div className="flex p-3 justify-around items-center gap-1.5 flex-wrap">
-                    {[
-                    { label: "Browser",      sub: "React SPA"       },
-                    null,
-                    { label: "Axios",        sub: "HTTP + JWT"       },
-                    null,
-                    { label: "Express",      sub: "REST API"         },
-                    null,
-                    { label: "Mongoose",     sub: "ODM Layer"        },
-                    null,
-                    { label: "MongoDB",      sub: "Database"         },
-                    ].map((item, i) =>
-                    item === null ? (
-                        <svg key={i} width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-300 dark:text-gray-700 shrink-0">
-                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                    ) : (
-                        <div key={i} className="flex flex-col items-center bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 min-w-[72px]">
+                      {i < ARCH_FLOW.length - 1 ? (
+                        <div className="flex justify-center py-1.5">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-300 dark:text-gray-700">
+                            <path d="M8 3v10M4 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Tablet/Desktop: horizontal */}
+                <div className="hidden sm:flex items-center justify-between gap-2 flex-wrap">
+                  {ARCH_FLOW.map((item, i) => (
+                    <div key={item.label} className="flex items-center gap-2">
+                      <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2 min-w-[110px]">
                         <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{item.label}</span>
                         <span className="text-[10px] text-gray-400 mt-0.5">{item.sub}</span>
-                        </div>
-                    )
-                    )}
-                  </div>
-                 </div>
-            </Fade>
+                      </div>
+
+                      {i < ARCH_FLOW.length - 1 ? (
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-gray-300 dark:text-gray-700 shrink-0">
+                          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Fade>
         </section>
 
+        </div>
       </main>
     </div>
   );

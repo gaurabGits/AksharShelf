@@ -53,7 +53,7 @@ export function NotificationProvider({ children }) {
   return (
     <NotificationContext.Provider value={notify}>
       {children}
-      <div className="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none">
+      <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-3 pointer-events-none">
         {toasts.map((toast) => (
           <Toast key={toast.id} toast={toast} onDismiss={dismiss} />
         ))}
@@ -81,7 +81,7 @@ function Toast({ toast, onDismiss }) {
 
   return (
     <div
-      className={`relative w-80 bg-white text-gray-900 rounded-xl shadow-lg overflow-hidden
+      className={`relative w-full sm:w-80 bg-white text-gray-900 rounded-xl shadow-lg overflow-hidden
       pointer-events-auto transition-all duration-300
       ${exiting ? "opacity-0 translate-x-6" : "opacity-100 translate-x-0"}`}
     >
@@ -95,6 +95,7 @@ function Toast({ toast, onDismiss }) {
         </div>
         <button
           onClick={() => onDismiss(id)}
+          aria-label="Dismiss notification"
           className="ml-2 w-6 h-6 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition"
         >
           ✕

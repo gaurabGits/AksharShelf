@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { routes } from "./routes/AppRoutes";
 import Layout from "./components/layout/Layout";
 import AdminRoutes from "./adminRoutes/adminRoute";
@@ -11,11 +11,8 @@ import AdminAlgorithm from "./admin/pages/adminAlgorithm";
 import AdminPayments from "./admin/pages/adminPayments";
 
 function App() {
-  const location = useLocation();
-  const isAdminPath = String(location.pathname || "").startsWith("/admin");
-
   return (
-    <div className={isAdminPath ? "w-full" : "max-w-7xl mx-auto"}>
+    <div className="w-full">
       <Routes>
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />

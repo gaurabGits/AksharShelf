@@ -10,13 +10,13 @@ const LINKS = [
 export default function Footer() {
   return (
     <footer className="bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800/60">
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div className="page-container py-12">
 
         {/* Top row */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-10">
+        <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
 
           {/* Brand */}
-          <div className="flex flex-col gap-4 max-w-xs">
+          <div className="flex w-full flex-col gap-4 sm:max-w-sm">
             <div className="flex items-center gap-2.5">
               <SystemLogo className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
               <span className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white">
@@ -30,47 +30,50 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Nav */}
-          <div className="flex flex-col gap-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 dark:text-gray-600">
-              Navigation
-            </p>
-            <nav className="flex flex-col gap-2.5">
-              {LINKS.map((l) => (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  className="text-sm text-gray-500 dark:text-gray-400
-                             hover:text-indigo-600 dark:hover:text-indigo-400
-                             transition-colors duration-150 w-fit"
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          {/* Nav + Project (mobile: spaced between) */}
+          <div className="flex w-full justify-between gap-10 sm:w-auto sm:gap-14">
+            {/* Nav */}
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 dark:text-gray-600">
+                Navigation
+              </p>
+              <nav className="flex flex-col gap-2.5">
+                {LINKS.map((l) => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className="text-sm text-gray-500 dark:text-gray-400
+                               hover:text-indigo-600 dark:hover:text-indigo-400
+                               transition-colors duration-150 w-fit"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
 
-          {/* Project info */}
-          <div className="flex flex-col gap-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 dark:text-gray-600">
-              Project
-            </p>
-            <div className="flex flex-col gap-2.5">
-              {[
-                { label: "Program",   value: "BCA"       },
-                { label: "Semester",  value: "6th"       },
-                { label: "Stack",     value: "MERN"      },
-                { label: "Year",      value: "2026"      },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex items-center gap-3">
-                  <span className="text-xs text-gray-400 dark:text-gray-500 w-16 shrink-0">
-                    {label}
-                  </span>
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {value}
-                  </span>
-                </div>
-              ))}
+            {/* Project info */}
+            <div className="flex flex-col gap-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 dark:text-gray-600">
+                Project
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { label: "Program",   value: "BCA"  },
+                  { label: "Semester",  value: "6th"  },
+                  { label: "Stack",     value: "MERN" },
+                  { label: "Year",      value: "2026" },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 w-16 shrink-0">
+                      {label}
+                    </span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -81,7 +84,7 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+          <p className="w-full sm:w-auto text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
             © {new Date().getFullYear()}{" "}
             <span className="font-medium text-gray-600 dark:text-gray-400">AksharShelf</span>
             {" "}· Built by{" "}

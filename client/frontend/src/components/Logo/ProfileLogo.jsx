@@ -5,7 +5,7 @@ import { getAvatarGradient } from "../../utils/avatarColor";
 import { useNotification } from "../../context/Notification";
 import { isJwtExpired } from "../../utils/jwt";
 
-function ProfileLogo() {
+function ProfileLogo({ mobile = false }) {
   const notify                = useNotification();
   const [user, setUser]       = useState(null);
   const [open, setOpen]       = useState(false);
@@ -73,7 +73,43 @@ function ProfileLogo() {
     : "?";
 
   if (loading) {
+    if (mobile) {
+      return (
+        <div className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/40 animate-pulse">
+          <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-28 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-2.5 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+          </div>
+        </div>
+      );
+    }
+
     return <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />;
+  }
+
+  if (mobile) {
+    return (
+      <Link
+        to="/profile"
+        className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-900"
+      >
+        <div
+          className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarGradient(user?.name ?? "")} flex items-center justify-center
+                     text-white text-sm font-bold select-none shrink-0`}
+        >
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+            {fullName}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            {user?.email ?? "View profile"}
+          </p>
+        </div>
+      </Link>
+    );
   }
 
   return (

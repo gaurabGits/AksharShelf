@@ -168,13 +168,13 @@ function Sidebar({ user, color, initials, roleLabel, activeTab, setActiveTab, on
     <aside className="w-full md:w-64 shrink-0 flex flex-col gap-3">
 
       {/* Avatar card */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-5 flex flex-col items-center gap-3 text-center">
-        <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 sm:p-5 flex flex-col items-center gap-3 text-center">
+        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-lg`}>
           {initials}
         </div>
         <div>
           <p className="text-sm font-bold text-gray-900 dark:text-white leading-snug">{user.name ?? "User"}</p>
-          <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[160px]">{user.email}</p>
+          <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[240px] md:max-w-[160px]">{user.email}</p>
         </div>
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/60">
@@ -201,46 +201,51 @@ function Sidebar({ user, color, initials, roleLabel, activeTab, setActiveTab, on
           Settings
         </p>
 
-        {NAV_ITEMS.map((item) => {
-          const Icon   = item.icon;
-          const active = activeTab === item.key;
-          return (
-            <button
-              key={item.key}
-              onClick={() => setActiveTab(item.key)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-2 ${
-                active
-                  ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
-                  : "border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
-              }`}
-            >
-              <Icon className="text-base shrink-0" />
-              {item.label}
-
-              {/* Bookshelf tab: show count badge */}
-              {item.key === "bookshelf" && total > 0 ? (
-                <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+        <div className="px-3 pb-3 md:px-0 md:pb-0 grid grid-cols-2 sm:grid-cols-3 md:block gap-2 md:gap-0">
+          {NAV_ITEMS.map((item) => {
+            const Icon   = item.icon;
+            const active = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className={`w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 text-xs sm:text-sm font-medium transition-all rounded-xl md:rounded-none border md:border-0 md:border-l-2 ${
                   active
-                    ? "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-500"
-                }`}>
-                  {total}
-                </span>
-              ) : active ? (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
-              ) : null}
-            </button>
-          );
-        })}
+                    ? "border-indigo-200 md:border-indigo-600 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 dark:border-indigo-900/60"
+                    : "border-gray-200 dark:border-gray-800 md:border-transparent bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
+                }`}
+              >
+                <Icon className="text-base shrink-0" />
+                <span className="min-w-0 truncate">{item.label}</span>
 
-        <div className="h-px bg-gray-100 dark:bg-gray-800 mx-4 my-1" />
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 border-l-2 border-transparent hover:border-red-400 transition-all mb-1"
-        >
-          <HiArrowRightOnRectangle className="text-base shrink-0" />
-          Logout
-        </button>
+                {/* Bookshelf tab: show count badge */}
+                {item.key === "bookshelf" && total > 0 ? (
+                  <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    active
+                      ? "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                  }`}>
+                    {total}
+                  </span>
+                ) : active ? (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 shrink-0" />
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="h-px bg-gray-100 dark:bg-gray-800 mx-3 md:mx-4 my-2 md:my-1" />
+
+        <div className="px-3 pb-3 md:px-0 md:pb-0">
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 text-xs sm:text-sm font-medium text-red-500 dark:text-red-400 rounded-xl md:rounded-none border border-red-100 dark:border-red-900/30 md:border-0 md:border-l-2 md:border-transparent hover:bg-red-50 dark:hover:bg-red-950/20 md:hover:border-red-400 transition-all"
+          >
+            <HiArrowRightOnRectangle className="text-base shrink-0" />
+            Logout
+          </button>
+        </div>
       </nav>
     </aside>
   );
@@ -276,11 +281,11 @@ function ProfileTab({ form, setForm, saving, onSave }) {
         ))}
       </div>
 
-      <div className="flex justify-end pt-1">
+      <div className="flex flex-col sm:flex-row sm:justify-end pt-1">
         <button
           onClick={onSave}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {saving && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
           {saving ? "Saving…" : "Save Changes"}
@@ -333,11 +338,11 @@ function SecurityTab({ pwdForm, setPwdForm, savingPwd, onSave }) {
                 />
               </div>
             ))}
-            <div className="flex justify-end pt-1">
+            <div className="flex flex-col sm:flex-row sm:justify-end pt-1">
               <button
                 onClick={onSave}
                 disabled={savingPwd}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {savingPwd && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 {savingPwd ? "Updating…" : "Update Password"}
@@ -666,7 +671,7 @@ function ActivityTab({ activity, setActivity, loading, error }) {
                   <button
                     onClick={() => openConfirm("review", review._id, review.book?._id, review.book?.title ?? "this book")}
                     title="Delete review"
-                    className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-0 group-hover:opacity-100 transition-all"
+                    className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
                   >
                     <HiOutlineTrash className="text-sm" />
                   </button>
@@ -735,7 +740,7 @@ function ActivityTab({ activity, setActivity, loading, error }) {
                   <button
                     onClick={() => openConfirm("pin", pin._id, pin.book?._id, pin.book?.title ?? "this book")}
                     title="Remove from shelf"
-                    className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-0 group-hover:opacity-100 transition-all"
+                    className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
                   >
                     <HiOutlineTrash className="text-sm" />
                   </button>
@@ -756,7 +761,7 @@ function BookshelfTab({ counts, loading }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h2 className="text-base font-bold text-gray-900 dark:text-white">Bookshelf</h2>
           <p className="text-xs text-gray-400 mt-0.5">Your reading lists and progress.</p>
@@ -770,22 +775,22 @@ function BookshelfTab({ counts, loading }) {
 
       {/* Stat cards */}
       {loading ? (
-        <div className="grid grid-cols-3 gap-3 animate-pulse">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-pulse">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-28 rounded-xl bg-gray-100 dark:bg-gray-800" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {SHELF_STATS.map(({ key, label, icon: Icon, color, bg, border, bar }) => {
             // ↑ FIX: destructure `icon` and alias as `Icon` — this was the crash
             const count = counts[key];
             const pct   = total > 0 ? Math.round((count / total) * 100) : 0;
             return (
-              <div key={key} className={`${bg} border ${border} rounded-xl p-4 flex flex-col gap-2`}>
+              <div key={key} className={`${bg} border ${border} rounded-xl p-3 sm:p-4 flex flex-col gap-2`}>
                 <div className="flex items-center justify-between">
                   <Icon className={`text-lg ${color}`} />
-                  <span className={`text-2xl font-bold ${color}`}>{count}</span>
+                  <span className={`text-xl sm:text-2xl font-bold ${color}`}>{count}</span>
                 </div>
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</p>
                 <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -804,7 +809,7 @@ function BookshelfTab({ counts, loading }) {
       {/* Overall stacked bar */}
       {!loading && total > 0 && (
         <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 p-4 space-y-2.5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Overall Progress</p>
             <p className="text-xs text-gray-400">{counts.completed} of {total} completed</p>
           </div>
@@ -813,7 +818,7 @@ function BookshelfTab({ counts, loading }) {
             <div className="h-full bg-indigo-500 transition-all duration-700" style={{ width: `${(counts.reading   / total) * 100}%` }} />
             <div className="h-full bg-amber-400  transition-all duration-700" style={{ width: `${(counts.planned   / total) * 100}%` }} />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {SHELF_STATS.map(({ key, label, bar }) => (
               <div key={key} className="flex items-center gap-1.5">
                 <div className={`w-2 h-2 rounded-full ${bar}`} />
@@ -1017,21 +1022,23 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-white dark:bg-gray-950">
 
       {/* Breadcrumb */}
-      <div className="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-3 flex items-center gap-2">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-        >
-          <HiArrowLeft className="text-base" /> Back
-        </button>
-        <span className="text-gray-300 dark:text-gray-700">/</span>
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Account</span>
-        <span className="text-gray-300 dark:text-gray-700">/</span>
-        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 capitalize">{activeTab}</span>
+      <div className="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <div className="page-container py-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            <HiArrowLeft className="text-base" /> Back
+          </button>
+          <span className="text-gray-300 dark:text-gray-700">/</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Account</span>
+          <span className="text-gray-300 dark:text-gray-700">/</span>
+          <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 capitalize">{activeTab}</span>
+        </div>
       </div>
 
       {/* Layout */}
-      <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-6 items-start">
+      <div className="page-container py-6 sm:py-8 flex flex-col md:flex-row gap-4 sm:gap-6 items-stretch md:items-start">
         <Sidebar
           user={user}
           color={color}
@@ -1043,7 +1050,7 @@ export default function ProfilePage() {
           shelfCounts={shelfCounts}
         />
 
-        <div className="flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 min-h-[400px]">
+        <div className="w-full md:flex-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 sm:p-6 md:min-h-[400px]">
           {activeTab === "profile"   && <ProfileTab  form={form} setForm={setForm} saving={saving} onSave={handleSave} />}
           {activeTab === "security"  && <SecurityTab pwdForm={pwdForm} setPwdForm={setPwdForm} savingPwd={savingPwd} onSave={handlePasswordSave} />}
           {activeTab === "activity"  && <ActivityTab activity={activity} setActivity={setActivity} loading={loadingActivity} error={activityError} />}
