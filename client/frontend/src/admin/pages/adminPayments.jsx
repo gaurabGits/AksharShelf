@@ -241,10 +241,10 @@ export default function AdminPayments() {
   const purchaseDetail = details?.type === "purchase" ? details.item : null;
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
       <AdminNavbar />
 
-      <div className="flex-1 p-4 sm:p-6 bg-gray-50 min-h-screen pt-20 md:pt-6">
+      <div className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 bg-gray-50 pt-20 md:pt-6">
         <div className="w-full space-y-4">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
