@@ -38,6 +38,10 @@ app.get("/", (req, res) => {
   res.send("Ebook API Running");
 });
 
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true, service: "ebook-api" });
+});
+
 app.use((err, _req, res, next) => {
   if (err?.type === "entity.too.large") {
     return res.status(413).json({
