@@ -40,7 +40,7 @@ const getReviewsForBook = async (req, res) => {
     }
 
     const reviews = await Review.find({ book: id })
-      .sort({ createdAt: -1 })
+      .sort({ updatedAt: -1, createdAt: -1 })
       .populate("user", "name");
 
     return res.json({
