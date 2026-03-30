@@ -9,6 +9,7 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineCheckCircle,
   HiOutlineClock,
+  HiEllipsisVertical,
   HiOutlineEye,
   HiOutlineLockClosed,
   HiOutlineStar,
@@ -298,7 +299,17 @@ function DescriptionModal({ text, onClose }) {
   );
 }
 
-function ReviewsModal({ reviews, avgRating, totalReviews, onClose }) {
+function ReviewsModal({
+  reviews,
+  avgRating,
+  totalReviews,
+  onClose,
+  myReviewId,
+  openReviewMenuId,
+  onMenuToggle,
+  onEditMyReview,
+  onDeleteMyReview,
+}) {
   return (
     <Overlay onClose={onClose}>
       <ModalHeader title={`Reviews (${reviews.length})`} onClose={onClose} />
@@ -311,7 +322,17 @@ function ReviewsModal({ reviews, avgRating, totalReviews, onClose }) {
         {reviews.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-10">No reviews yet.</p>
         ) : (
-          reviews.map((r) => <ReviewRow key={r._id} review={r} />)
+          reviews.map((r) => (
+            <ReviewRow
+              key={r._id}
+              review={r}
+              isMine={Boolean(myReviewId && String(r?._id) === String(myReviewId))}
+              menuOpen={Boolean(openReviewMenuId && String(openReviewMenuId) === String(r?._id))}
+              onMenuToggle={onMenuToggle}
+              onEdit={onEditMyReview}
+              onDelete={myReviewId ? onDeleteMyReview : undefined}
+            />
+          ))
         )}
       </div>
     </Overlay>
@@ -396,11 +417,26 @@ function RatingBar({ reviews, avgRating, totalReviews }) {
 }
 
 /* Review Row */
-function ReviewRow({ review, compact = false, clamp = false }) {
+function ReviewRow({
+  review,
+  compact = false,
+  clamp = false,
+  isMine = false,
+  menuOpen = false,
+  onMenuToggle,
+  onEdit,
+  onDelete,
+}) {
   const name =
     typeof review.user === "object"
       ? review.user?.name || "Reader"
       : review.userName || "Reader";
+
+  const timeValue = review.updatedAt ?? review.createdAt;
+  const isEdited =
+    review.updatedAt &&
+    review.createdAt &&
+    new Date(review.updatedAt).getTime() - new Date(review.createdAt).getTime() > 60 * 1000;
 
   const commentClass = `text-xs text-gray-500 dark:text-gray-400 leading-relaxed${
     clamp ? " line-clamp-2" : ""
@@ -417,18 +453,62 @@ function ReviewRow({ review, compact = false, clamp = false }) {
         size={compact ? "w-6 h-6 text-[10px]" : "w-7 h-7 text-[11px]"}
       />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-0.5">
-          <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
-            {name}
-          </span>
-          <div className="flex items-center gap-2 shrink-0">
-            {review.rating > 0 && (
-              <StarRating value={review.rating} readonly size="text-xs" />
-            )}
-            <span className="text-[10px] text-gray-400">
-              {formatRelativeTime(review.createdAt)}
+        <div className="flex items-start justify-between gap-2 mb-0.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {name}
+              </span>
+              {review.rating > 0 && (
+                <StarRating value={review.rating} readonly size="text-xs" />
+              )}
+            </div>
+            <span className="block text-[10px] text-gray-400 mt-0.5">
+              {formatRelativeTime(timeValue)}{isEdited ? " (Edited)" : ""}
             </span>
           </div>
+
+          {isMine && (onEdit || onDelete) ? (
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onMenuToggle?.(review._id); }}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Review actions"
+                title="Actions"
+              >
+                <HiEllipsisVertical className="text-lg" />
+              </button>
+
+              {menuOpen ? (
+                <div
+                  className="absolute right-0 top-9 z-50 w-32 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-xl rounded-xl overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {onEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => { onMenuToggle?.(""); onEdit(review); }}
+                      className="w-full text-left px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      Edit
+                    </button>
+                  ) : null}
+                  {onDelete ? (
+                    <button
+                      type="button"
+                      onClick={() => { onMenuToggle?.(""); onDelete(review); }}
+                      className="w-full text-left px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    >
+                      Delete
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <p className={commentClass}>{review.comment}</p>
       </div>
@@ -452,7 +532,9 @@ export default function BookDetailPage() {
   const [comment, setComment] = useState("");
   const [reviews, setReviews] = useState([]);
   const [posting, setPosting] = useState(false);
+  const [deletingReview, setDeletingReview] = useState(false);
   const [myReviewId, setMyReviewId] = useState(null);
+  const [openReviewMenuId, setOpenReviewMenuId] = useState("");
   const [recommendations, setRecommendations] = useState([]);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [collabRecommendations, setCollabRecommendations] = useState([]);
@@ -460,11 +542,13 @@ export default function BookDetailPage() {
 
   const isLoggedIn = Boolean(localStorage.getItem("token"));
   const dropdownRef = useRef(null);
+  const reviewEditorRef = useRef(null);
 
   useEffect(() => {
     let active = true;
     setError(null); setBook(null); setAccess(null); setReviews([]);
     setShelfStatus(null); setMyReviewId(null); setMyRating(0); setComment("");
+    setOpenReviewMenuId("");
     setRecommendations([]); setRecommendationsLoading(true);
     setCollabRecommendations([]); setCollabRecommendationsLoading(true);
 
@@ -536,6 +620,13 @@ export default function BookDetailPage() {
     return () => document.removeEventListener("mousedown", fn);
   }, []);
 
+  useEffect(() => {
+    if (!openReviewMenuId) return;
+    const close = () => setOpenReviewMenuId("");
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [openReviewMenuId]);
+
   const handleShelfSelect = async (status) => {
     if (!localStorage.getItem("token")) {
       notify.info("Login Required", "Please login to use your bookshelf.");
@@ -589,6 +680,52 @@ export default function BookDetailPage() {
     } finally { setPosting(false); }
   };
 
+  const handleEditMyReview = (review) => {
+    if (!isLoggedIn) { notify.info("Login Required", "Please login to edit your review."); navigate("/auth/login"); return; }
+    if (!review?._id) return;
+    setMyReviewId(review._id);
+    setMyRating(Number.isFinite(Number(review.rating)) ? Number(review.rating) : 0);
+    setComment(typeof review.comment === "string" ? review.comment : "");
+    setTimeout(() => reviewEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  };
+
+  const handleDeleteMyReview = async (review) => {
+    if (!isLoggedIn) { notify.info("Login Required", "Please login to delete your review."); navigate("/auth/login"); return; }
+    if (deletingReview) return;
+    const reviewId = review?._id ?? myReviewId;
+    if (!reviewId) return;
+    if (!window.confirm("Delete your review?")) return;
+
+    setDeletingReview(true);
+    try {
+      const { data } = await API.delete(`/books/${id}/reviews`);
+
+      setReviews((prev) => prev.filter((r) => String(r?._id) !== String(reviewId)));
+      setMyReviewId(null);
+      setMyRating(0);
+      setComment("");
+      setOpenReviewMenuId("");
+
+      if (data?.stats) {
+        setBook((prev) =>
+          prev
+            ? {
+                ...prev,
+                averageRating: data.stats.averageRating ?? prev.averageRating,
+                totalRatings: data.stats.totalRatings ?? prev.totalRatings,
+              }
+            : prev
+        );
+      }
+
+      notify.success("Deleted", "Your review has been deleted.");
+    } catch (err) {
+      notify.error("Error", err.response?.data?.message || "Failed to delete review.");
+    } finally {
+      setDeletingReview(false);
+    }
+  };
+
   const handleRatingChange = (value) => {
     if (!isLoggedIn) { notify.info("Login Required", "Please login to rate this book."); navigate("/auth/login"); return; }
     setMyRating(value);
@@ -613,8 +750,8 @@ export default function BookDetailPage() {
   const currentShelf  = SHELF_OPTIONS.find((o) => o.key === shelfStatus);
   const isLongDesc    = (book.description?.length ?? 0) > 220;
   const sortedReviews = [...reviews].sort((a, b) => {
-    const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+    const aTime = a?.updatedAt || a?.createdAt ? new Date(a.updatedAt ?? a.createdAt).getTime() : 0;
+    const bTime = b?.updatedAt || b?.createdAt ? new Date(b.updatedAt ?? b.createdAt).getTime() : 0;
     return bTime - aTime;
   });
   const myReview = myReviewId ? sortedReviews.find((r) => String(r?._id) === String(myReviewId)) : null;
@@ -631,6 +768,11 @@ export default function BookDetailPage() {
           reviews={sortedReviews}
           avgRating={avgRating}
           totalReviews={totalReviews}
+          myReviewId={myReviewId}
+          openReviewMenuId={openReviewMenuId}
+          onMenuToggle={(rid) => setOpenReviewMenuId((prev) => (String(prev) === String(rid) ? "" : String(rid)))}
+          onEditMyReview={handleEditMyReview}
+          onDeleteMyReview={handleDeleteMyReview}
           onClose={() => setShowReviewsModal(false)}
         />
       )}
@@ -812,14 +954,23 @@ export default function BookDetailPage() {
                   <div className="-mx-4 border-t border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
                     {previewReviews.map((r) => (
                       <div key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                        <ReviewRow review={r} compact clamp />
+                        <ReviewRow
+                          review={r}
+                          compact
+                          clamp
+                          isMine={Boolean(myReviewId && String(r?._id) === String(myReviewId))}
+                          menuOpen={Boolean(openReviewMenuId && String(openReviewMenuId) === String(r?._id))}
+                          onMenuToggle={(rid) => setOpenReviewMenuId((prev) => (String(prev) === String(rid) ? "" : String(rid)))}
+                          onEdit={handleEditMyReview}
+                          onDelete={myReviewId ? handleDeleteMyReview : undefined}
+                        />
                       </div>
                     ))}
                   </div>
                 )}
 
                 {/* Write / edit review */}
-                <div className="border-t border-gray-100 dark:border-gray-800 p-4 space-y-3">
+                <div ref={reviewEditorRef} className="border-t border-gray-100 dark:border-gray-800 p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       {myReviewId ? "Edit your review" : "Write a review"}
@@ -853,7 +1004,7 @@ export default function BookDetailPage() {
                         <button
                           type="button"
                           onClick={handleComment}
-                          disabled={!comment.trim() || posting}
+                          disabled={!comment.trim() || posting || deletingReview}
                           className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-all"
                         >
                           {posting ? "Saving..." : myReviewId ? "Update" : "Post"}

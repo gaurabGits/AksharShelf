@@ -1,8 +1,11 @@
 import axios from "axios";
 import { isJwtExpired } from "../utils/jwt";
 
+const defaultBaseURL = import.meta.env.DEV ? "http://localhost:3000/api" : "/api";
+const baseURL = import.meta.env.VITE_API_BASE_URL || defaultBaseURL;
+
 const API = axios.create({
-  baseURL: "http://localhost:3000/api",
+  baseURL,
 });
 
 // Automatically send token with every request

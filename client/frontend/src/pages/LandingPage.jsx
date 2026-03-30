@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import HeroSection from "../components/landing/Hero Section/HeroSections";
 import FreeBooksSection from "../components/landing/FreeBooksSection";
 import FeaturesSection from "../components/landing/FeatureSections";
-import AlgorithmSection from "../components/landing/AlgorithmSection";
+import AlgorithmSection from "../components/landing/UpcomingFeatureSection";
 import CTASection from "../components/landing/CTASection";
 
 function LandingPage() {

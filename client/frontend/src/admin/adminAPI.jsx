@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:3000/api/admin";
+const defaultApiBase = import.meta.env.DEV ? "http://localhost:3000/api" : "/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || defaultApiBase;
+const BASE_URL = `${API_BASE}/admin`;
 
 const authHeaders = () => {
   const token = localStorage.getItem("adminToken");
