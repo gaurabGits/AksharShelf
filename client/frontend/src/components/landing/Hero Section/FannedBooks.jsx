@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { HiArrowRight, HiOutlineBookOpen, HiOutlineEye, HiOutlineStar } from "react-icons/hi2";
+import { HiArrowRight, HiOutlineBookOpen, HiOutlineStar } from "react-icons/hi2";
 import API from "../../../services/api";
 
 function FannedBooks() {
@@ -26,12 +26,11 @@ function FannedBooks() {
         const booksArray = res?.data?.books;
 
         if (Array.isArray(booksArray)) {
-          const topThree = booksArray.slice(0, 3).map(({ title, author, _id, views, reads }, idx) => ({
+          const topThree = booksArray.slice(0, 3).map(({ title, author, _id, reads }, idx) => ({
             title,
             author,
             id: _id,
             rank: idx + 1,
-            views: Number.isFinite(views) ? views : 0,
             reads: Number.isFinite(reads) ? reads : 0,
           }));
 
@@ -146,10 +145,6 @@ function FannedBooks() {
                 </p>
 
                 <div className="mt-2 flex items-center gap-3 text-white/85 text-[11px] font-medium">
-                  <span className="inline-flex items-center gap-1">
-                    <HiOutlineEye className="text-xs" />
-                    {book.views}
-                  </span>
                   <span className="inline-flex items-center gap-1">
                     <HiOutlineBookOpen className="text-xs" />
                     {book.reads}

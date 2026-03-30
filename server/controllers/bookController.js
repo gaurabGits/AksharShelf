@@ -163,11 +163,6 @@ const getBookById = async (req, res) => {
       return res.status(404).json({ message: "Book not found" });
     }
 
-    const didMarkView = await markActivityOnce({ userId: req.user?.id, bookId: book._id, field: "viewedAt" });
-    if (didMarkView) {
-      await Book.updateOne({ _id: book._id }, { $inc: { views: 1 } }, { timestamps: false });
-    }
-
     let canRead = !book.isPaid;
 
     if (book.isPaid && req.user) {
@@ -204,9 +199,6 @@ const getBookById = async (req, res) => {
 
     const access = { canRead };
     const bookObject = book.toObject();
-    if (didMarkView) {
-      bookObject.views = (Number.isFinite(bookObject.views) ? bookObject.views : 0) + 1;
-    }
 
     const normalizedBook = {
       ...bookObject,
@@ -334,7 +326,7 @@ const getPopularBooks = async (req, res) => {
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 20) : 3;
 
     const books = await Book.find({})
-      .sort({ reads: -1, views: -1, createdAt: -1 })
+      .sort({ reads: -1, createdAt: -1 })
       .limit(limit);
 
     const booksWithBookmark = await attachBookmarkFlag(books, req.user?.id);
@@ -369,14 +361,14 @@ const getBookRecommendations = async (req, res) => {
       }
     };
 
-    const baseProjection = "title author description category coverImage isPaid price averageRating totalRatings views reads";
+    const baseProjection = "title author description category coverImage isPaid price averageRating totalRatings reads";
 
     const [sameCategory, sameAuthor, popularFallback] = await Promise.all([
       Book.find({ _id: { $ne: bookId }, category: target.category }).select(baseProjection).limit(200).lean(),
       Book.find({ _id: { $ne: bookId }, author: target.author }).select(baseProjection).limit(80).lean(),
       Book.find({ _id: { $ne: bookId } })
         .select(baseProjection)
-        .sort({ reads: -1, views: -1, createdAt: -1 })
+        .sort({ reads: -1, createdAt: -1 })
         .limit(120)
         .lean(),
     ]);
@@ -402,10 +394,7 @@ const getBookRecommendations = async (req, res) => {
       if (b.recommendation.score !== a.recommendation.score) return b.recommendation.score - a.recommendation.score;
       const br = Number.isFinite(b.reads) ? b.reads : 0;
       const ar = Number.isFinite(a.reads) ? a.reads : 0;
-      if (br !== ar) return br - ar;
-      const bv = Number.isFinite(b.views) ? b.views : 0;
-      const av = Number.isFinite(a.views) ? a.views : 0;
-      return bv - av;
+      return br - ar;
     });
 
     const top = scored.slice(0, limit);
@@ -437,7 +426,7 @@ const getBookCollaborativeRecommendations = async (req, res) => {
       maxCandidates: 500,
     });
 
-    const baseProjection = "title author description category coverImage isPaid price averageRating totalRatings views reads";
+    const baseProjection = "title author description category coverImage isPaid price averageRating totalRatings reads";
 
     let orderedBooks = [];
     if (scores.length > 0) {
@@ -452,10 +441,8 @@ const getBookCollaborativeRecommendations = async (req, res) => {
       orderedBooks = orderedBooks.slice(0, limit).map((book) => {
         const stat = scoreById.get(String(book._id));
         const readers = Number.isFinite(stat?.readers) ? stat.readers : 0;
-        const viewers = Number.isFinite(stat?.viewers) ? stat.viewers : 0;
         const reasons = [];
         if (readers > 0) reasons.push("Readers also read");
-        if (viewers > 0) reasons.push("Viewers also viewed");
 
         return {
           ...book,
@@ -469,7 +456,7 @@ const getBookCollaborativeRecommendations = async (req, res) => {
     } else {
       const fallback = await Book.find({ _id: { $ne: bookId } })
         .select(baseProjection)
-        .sort({ reads: -1, views: -1, createdAt: -1 })
+        .sort({ reads: -1, createdAt: -1 })
         .limit(limit)
         .lean();
 

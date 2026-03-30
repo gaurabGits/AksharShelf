@@ -10,7 +10,6 @@ import {
   HiOutlineCheckCircle,
   HiOutlineClock,
   HiEllipsisVertical,
-  HiOutlineEye,
   HiOutlineLockClosed,
   HiOutlineStar,
   HiStar,
@@ -745,7 +744,6 @@ export default function BookDetailPage() {
   const canRead       = access?.canRead;
   const avgRating     = Number.isFinite(book.averageRating) ? book.averageRating : 0;
   const totalReviews  = Number.isFinite(book.totalRatings) ? book.totalRatings : reviews.length;
-  const totalViews    = Number.isFinite(book.views) ? book.views : 0;
   const totalReads    = Number.isFinite(book.reads) ? book.reads : 0;
   const currentShelf  = SHELF_OPTIONS.find((o) => o.key === shelfStatus);
   const isLongDesc    = (book.description?.length ?? 0) > 220;
@@ -865,9 +863,6 @@ export default function BookDetailPage() {
                       {currentShelf.icon} {currentShelf.label}
                     </Badge>
                   )}
-                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
-                    <HiOutlineEye className="shrink-0" /> {totalViews}
-                  </span>
                   <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
                     <HiOutlineBookOpen className="shrink-0" /> {totalReads}
                   </span>
