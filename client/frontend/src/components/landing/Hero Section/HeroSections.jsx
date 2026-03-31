@@ -93,12 +93,12 @@ function HeroSection({ onStartFree }) {
           }}
         />
 
-        <div className="page-container relative w-full py-16 sm:py-20 lg:py-24">
-          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="relative mx-auto w-full max-w-[1220px] px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+          <div className="grid items-center gap-10 md:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.95fr)] lg:gap-16 xl:gap-20">
 
             {/* â”€â”€ LEFT â”€â”€ */}
-            <div className="flex flex-col gap-8">
-              <h1 className="fade-up d1 text-3xl font-bold leading-[1.12] tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:text-[56px]">
+            <div className="flex flex-col items-center gap-7 text-center lg:items-start lg:text-left">
+              <h1 className="fade-up d1 max-w-[12ch] text-3xl font-bold leading-[1.08] tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:max-w-none lg:text-[56px]">
                 Your personal{" "}
                 <span className="relative inline-block">
                   <span className="text-indigo-600 dark:text-indigo-400">reading shelf</span>
@@ -113,7 +113,7 @@ function HeroSection({ onStartFree }) {
                Discover, organize, and enjoy huge number of books in one clean, distraction free space built for curious minds.
               </p>
 
-              <div className="fade-up d3 flex flex-wrap items-center gap-3">
+              <div className="fade-up d3 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
                 <Link
                   to="/books"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/50 sm:w-auto"
@@ -129,7 +129,7 @@ function HeroSection({ onStartFree }) {
               </div>
 
               {!isLoggedIn && (
-                <div className="fade-up d4 flex items-center select-none gap-3 pt-1">
+                <div className="fade-up d4 flex flex-wrap items-center justify-center gap-3 pt-1 lg:justify-start">
                   <div className="flex -space-x-2">
                     {lastUsers.map((user, i) => (
                       <span key={i} className={`w-7 h-7 rounded-full ${user.color || COLORS[i % COLORS.length]} border-2 border-white dark:border-gray-950 flex items-center justify-center text-white text-[10px] font-bold`}>{user.name?.charAt(0)}</span>
@@ -143,7 +143,7 @@ function HeroSection({ onStartFree }) {
             </div>
 
             {/* â”€â”€ RIGHT â€” Fanned Cards â”€â”€ */}
-            <div className="relative flex justify-center lg:justify-end">
+            <div className="relative mx-auto flex w-full max-w-[460px] justify-center lg:mx-0 lg:max-w-none lg:justify-end">
               <FannedBooks />
             </div>
             

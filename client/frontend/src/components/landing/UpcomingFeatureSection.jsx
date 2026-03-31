@@ -13,7 +13,7 @@ export default function AlgorithmSection() {
   return (
     <section className="border-t border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950 section-pad">
       <div className="page-container">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:gap-10 lg:gap-12">
+        <div className="flex w-full flex-col gap-8 sm:gap-10 lg:gap-12">
           <div className="mx-auto max-w-2xl text-center">
             <span className="inline-flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-widest text-indigo-500 dark:text-indigo-400">
               <HiOutlineSparkles className="text-base" />
@@ -27,7 +27,7 @@ export default function AlgorithmSection() {
             </p>
           </div>
 
-          <div className="mx-auto grid w-full max-w-6xl cursor-default grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-5 lg:gap-6">
+          <div className="grid w-full cursor-default grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-5 lg:gap-6">
             {COMING_SOON.map((item, i) => (
               <div
                 key={i}

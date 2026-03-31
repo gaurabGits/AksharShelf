@@ -21,7 +21,7 @@ export default function FeaturesSection() {
   return (
     <section className="bg-gray-50 dark:bg-gray-950 section-pad">
       <div className="page-container">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:gap-10 lg:gap-12">
+        <div className="flex w-full flex-col gap-8 sm:gap-10 lg:gap-12">
           <div className="mx-auto max-w-2xl text-center">
             <span className="text-xs font-semibold uppercase tracking-widest text-indigo-500 dark:text-indigo-400">
               What's inside
@@ -31,7 +31,7 @@ export default function FeaturesSection() {
             </h2>
           </div>
 
-          <div className="mx-auto grid w-full max-w-6xl cursor-default grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-5 lg:gap-6">
+          <div className="grid w-full cursor-default grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4 sm:gap-5 lg:gap-6">
             {FEATURES.map((f, i) => (
               <div
                 key={i}

@@ -19,9 +19,6 @@ export default function Footer() {
           <div className="flex w-full flex-col gap-4 sm:max-w-sm">
             <div className="flex items-center gap-2.5">
               <SystemLogo className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white">
-                AksharShelf
-              </span>
             </div>
             <p className="text-xs leading-relaxed text-gray-400 dark:text-gray-500">
               A full-stack reading platform built as a BCA 6th semester
