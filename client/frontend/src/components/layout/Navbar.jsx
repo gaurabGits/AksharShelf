@@ -80,9 +80,9 @@ function Navbar() {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-gray-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/80 supports-[backdrop-filter]:dark:bg-gray-950/70 transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out motion-reduce:transition-none will-change-transform ${
-          hidden ? "-translate-y-full" : "translate-y-0"
-        } ${scrolled ? "border-b border-gray-200 dark:border-gray-800 shadow-md" : "border-b border-transparent"}`}
+        className={`fixed top-0 left-0 right-0 z-50 border-b border-gray-200/80 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04),0_10px_30px_rgba(15,23,42,0.05)] backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-800/80 dark:bg-gray-950/80 dark:shadow-[0_1px_0_rgba(255,255,255,0.04),0_10px_30px_rgba(0,0,0,0.28)] supports-[backdrop-filter]:dark:bg-gray-950/70 transition-[transform,opacity,box-shadow,border-color,background-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none will-change-transform ${
+          hidden ? "-translate-y-[108%] opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+        } ${scrolled ? "border-gray-200 dark:border-gray-800 shadow-[0_1px_0_rgba(15,23,42,0.05),0_16px_36px_rgba(15,23,42,0.08)] dark:shadow-[0_1px_0_rgba(255,255,255,0.05),0_16px_36px_rgba(0,0,0,0.34)]" : ""}`}
       >
         <div className="page-container flex h-16 items-center gap-4">
 
