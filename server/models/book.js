@@ -13,6 +13,25 @@ const bookSchema = new mongoose.Schema(
     description: {
       type: String,
     },
+    isbn: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    language: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    pageCount: {
+      type: Number,
+      default: null,
+    },
+    publicationDate: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     category: {
       type: String,
       required: true,
