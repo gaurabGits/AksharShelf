@@ -68,34 +68,33 @@ export default function BooksPage() {
   const MiniCard = ({ book }) => (
     <div
       onClick={() => navigate(`/books/${book._id}`)}
-      className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+      className="group w-full min-w-0 cursor-pointer"
     >
-      {/* Cover */}
-      <div className="h-44 bg-gray-100 dark:bg-gray-800 overflow-hidden relative">
-        {book.coverImage ? (
-          <img
-            src={book.coverImage}
-            alt={book.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-violet-200 dark:from-indigo-950/60 dark:to-violet-950/60">
-            <HiOutlineBookOpen className="text-5xl text-indigo-300 dark:text-indigo-700" />
-          </div>
-        )}
+      <div className="overflow-hidden bg-white p-0 shadow-[0_16px_34px_rgba(15,23,42,0.08)] transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_20px_42px_rgba(15,23,42,0.14)] dark:bg-gray-900 dark:shadow-black/30">
+        <div className="relative aspect-[175/266] w-full overflow-hidden bg-[#eef1e6]">
+          {book.coverImage ? (
+            <img
+              src={book.coverImage}
+              alt={book.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#eef5df] via-[#dce8c9] to-[#bac98e] dark:from-slate-800 dark:via-slate-700 dark:to-slate-600">
+              <HiOutlineBookOpen className="text-5xl text-[#6a7f46] dark:text-slate-300" />
+            </div>
+          )}
 
-        {/* New badge */}
-        <span className="absolute top-2.5 right-2.5 text-[10px] font-semibold bg-white/90 dark:bg-gray-900/90 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full shadow-sm">
-          New
-        </span>
+          <span className="absolute right-3 top-3 rounded-[8px] bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-gray-700 shadow-sm">
+            New
+          </span>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="p-3.5 space-y-1">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-snug">
+      <div className="px-0 pt-3">
+        <p className="font-display line-clamp-2 text-[16px] font-semibold leading-[1.28] tracking-[-0.01em] text-gray-950 dark:text-white">
           {book.title}
         </p>
-        <p className="text-xs text-gray-400 truncate">by {book.author}</p>
+        <p className="font-ui mt-1 truncate text-[14px] leading-[1.35] text-gray-500 dark:text-gray-400">{book.author}</p>
       </div>
     </div>
   );
@@ -109,7 +108,7 @@ export default function BooksPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-              📚 Books
+              Books
             </h1>
             <p className="text-sm text-gray-400 mt-1">
               {loading ? "Loading..." : `${filteredBooks.length} books available`}
@@ -145,7 +144,7 @@ export default function BooksPage() {
                 </h2>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid w-full grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(175px,1fr))] md:gap-x-4">
               {recentBooks.map((book) => (
                 <MiniCard key={book._id} book={book} />
               ))}
@@ -184,7 +183,7 @@ export default function BooksPage() {
         </div>
 
         {/* Main Book Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid w-full grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(175px,1fr))] md:gap-x-4 md:gap-y-7">
           {loading
             ? Array(SKELETON_COUNT).fill(0).map((_, i) => <BookCardSkeleton key={i} />)
             : filteredBooks.map((book) => (
