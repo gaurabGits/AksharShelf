@@ -6,7 +6,12 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}", //
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        display: ['"Iowan Old Style"', '"Palatino Linotype"', '"Book Antiqua"', "Georgia", "serif"],
+        ui: ['"Aptos"', '"Segoe UI"', "Tahoma", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 };
