@@ -156,8 +156,8 @@ const AdminNotifications = () => {
     <div className="h-screen bg-[#f5f6fa] flex overflow-hidden">
       <AdminNavbar />
 
-      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-scroll pt-20 md:pt-10">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-[#f5f6fa] pt-20 md:pt-10">
+        <div className="admin-page-container space-y-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-[#1a1a2e]">Notifications</h1>
@@ -180,7 +180,7 @@ const AdminNotifications = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
               <h2 className="text-base font-semibold text-[#1a1a2e]">Send a notification</h2>
               <p className="text-xs text-slate-400 mt-1">

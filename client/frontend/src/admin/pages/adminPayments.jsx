@@ -244,8 +244,8 @@ export default function AdminPayments() {
     <div className="flex h-screen overflow-hidden">
       <AdminNavbar />
 
-      <div className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 bg-gray-50 pt-20 md:pt-6">
-        <div className="w-full space-y-4">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-[#f5f6fa] pt-20 md:pt-10">
+        <div className="admin-page-container space-y-4">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
@@ -473,7 +473,7 @@ export default function AdminPayments() {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       <Modal open={grantOpen} title="Grant access" onClose={() => setGrantOpen(false)}>
         <form onSubmit={handleGrant} className="space-y-3">

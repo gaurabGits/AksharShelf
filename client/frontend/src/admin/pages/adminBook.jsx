@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { pdfjs } from 'react-pdf';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import AdminNavbar from '../Components/adminNavbar';
 import { addBook, deleteBook, editBook, fetchAllBooks } from '../adminAPI';
 import { useNotification } from '../../context/Notification';
 
+pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+
 const initialForm = {
   title:       '',
   author:      '',
+  isbn:        '',
+  language:    '',
+  pageCount:   '',
+  publicationDate: '',
   category:    '',
   description: '',
   pdfUrl:      '',
@@ -16,6 +24,12 @@ const initialForm = {
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
+
+const readPdfPageCount = async (file) => {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
+  return pdf.numPages;
+};
 
 const AdminBook = () => {
   const notify = useNotification();
@@ -80,7 +94,11 @@ const AdminBook = () => {
 
     setForm((prev) => ({
       ...prev,
-      [name]: name === 'price' ? Number(value || 0) : value,
+      [name]: name === 'price'
+        ? Number(value || 0)
+        : name === 'pageCount'
+          ? value.replace(/[^\d]/g, '')
+          : value,
     }));
   };
 
@@ -140,10 +158,23 @@ const AdminBook = () => {
 
     // Read as base64 or object URL for storage
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const base64 = event.target.result;
       setPdfName(file.name);
-      setForm((prev) => ({ ...prev, pdfUrl: base64 }));
+
+      let detectedPageCount = '';
+      try {
+        detectedPageCount = String(await readPdfPageCount(file));
+      // eslint-disable-next-line no-unused-vars
+      } catch (_err) {
+        notify.warning('Page Count Unavailable', 'Could not detect page count from this PDF automatically.');
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        pdfUrl: base64,
+        pageCount: detectedPageCount || prev.pageCount,
+      }));
     };
     reader.readAsDataURL(file);
   };
@@ -164,6 +195,10 @@ const AdminBook = () => {
       ...form,
       title:       form.title.trim(),
       author:      form.author.trim(),
+      isbn:        form.isbn.trim(),
+      language:    form.language.trim(),
+      pageCount:   form.pageCount === '' ? null : Number(form.pageCount),
+      publicationDate: form.publicationDate.trim(),
       category:    form.category.trim(),
       description: form.description.trim(),
       pdfUrl:      form.pdfUrl.trim(),
@@ -199,6 +234,10 @@ const AdminBook = () => {
     setForm({
       title:       book.title       || '',
       author:      book.author      || '',
+      isbn:        book.isbn        || '',
+      language:    book.language    || '',
+      pageCount:   book.pageCount == null ? '' : String(book.pageCount),
+      publicationDate: book.publicationDate || '',
       category:    book.category    || '',
       description: book.description || '',
       pdfUrl:      book.pdfUrl      || '',
@@ -244,8 +283,8 @@ const AdminBook = () => {
         onChange={handlePdfFile}
       />
 
-      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-scroll pt-20 md:pt-10">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-[#f5f6fa] pt-20 md:pt-10">
+        <div className="admin-page-container space-y-8">
 
           {/* Page Header */}
           <div>
@@ -336,12 +375,39 @@ const AdminBook = () => {
                     className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1a1a2e] transition-colors"
                   />
                   <input
+                    name="isbn"
+                    placeholder="ISBN"
+                    value={form.isbn}
+                    onChange={onChange}
+                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1a1a2e] transition-colors"
+                  />
+                  <input
+                    name="language"
+                    placeholder="Language"
+                    value={form.language}
+                    onChange={onChange}
+                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1a1a2e] transition-colors"
+                  />
+                  <input
                     name="category"
                     placeholder="Category *"
                     value={form.category}
                     onChange={onChange}
                     className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1a1a2e] transition-colors"
                   />
+                  <input
+                    name="publicationDate"
+                    placeholder="Publication date"
+                    value={form.publicationDate}
+                    onChange={onChange}
+                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1a1a2e] transition-colors"
+                  />
+                  <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                    <span>Page Count</span>
+                    <span className="font-medium text-slate-700">
+                      {form.pageCount ? `${form.pageCount} pages` : 'Auto from PDF'}
+                    </span>
+                  </div>
 
                   {/* PDF Upload Field */}
                   <div
@@ -390,7 +456,7 @@ const AdminBook = () => {
                     </label>
                     {form.isPaid && (
                       <div className="flex items-center gap-1 border border-slate-200 rounded-lg px-3 py-2 w-36">
-                        <span className="text-sm text-slate-400">₹</span>
+                        <span className="text-sm text-slate-400">Rs. </span>
                         <input
                           type="number"
                           name="price"
@@ -486,7 +552,7 @@ const AdminBook = () => {
                               )}
                             </div>
                             <div>
-                              <p className="font-medium text-[#1a1a2e] line-clamp-1 max-w-[180px]">
+                              <p className="font-medium text-[#1a1a2e] line-clamp-1 max-w-[220px] xl:max-w-[280px]">
                                 {book.title}
                               </p>
                               {/* PDF indicator */}

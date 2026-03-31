@@ -170,8 +170,8 @@ const AdminAlgorithm = () => {
     <div className="h-screen bg-[#f5f6fa] flex overflow-hidden">
       <AdminNavbar />
 
-      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-scroll pt-20 md:pt-10">
-        <div className="max-w-6xl mx-auto space-y-8">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-[#f5f6fa] pt-20 md:pt-10">
+        <div className="admin-page-container space-y-8">
           {/* Header */}
           <div>
             <h1 className="text-2xl font-bold text-[#1a1a2e] flex items-center gap-2">
