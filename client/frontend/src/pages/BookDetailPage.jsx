@@ -148,75 +148,87 @@ function Badge({ children, color = "gray" }) {
 
 function Skeleton() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 animate-pulse">
-      <div className="page-container py-8">
-        <div className="h-3 w-28 bg-gray-200 dark:bg-gray-800 rounded-full" />
+    <div className="min-h-screen animate-pulse bg-[#f7f7f3] dark:bg-gray-950">
+      <div className="page-container py-6">
+        <div className="h-3 w-28 rounded-full bg-gray-200 dark:bg-gray-800" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-4">
-          <div className="lg:col-span-8 space-y-6">
-            {/* Book panel */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-              <div className="flex flex-col sm:flex-row">
-                <div className="sm:w-44 md:w-52 shrink-0 bg-gray-200 dark:bg-gray-800 h-60 sm:h-auto" />
-                <div className="flex-1 p-6 space-y-3">
-                  <div className="h-6 w-4/5 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                  <div className="h-4 w-2/5 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                  <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                  <div className="flex flex-wrap gap-2 pt-1">
+        <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-6">
+            <div className="rounded-[28px] border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+              <div className="grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
+                <div className="mx-auto aspect-[175/266] w-full max-w-[220px] bg-gray-200 dark:bg-gray-800" />
+                <div className="space-y-4">
+                  <div className="h-3 w-24 rounded-full bg-gray-200 dark:bg-gray-800" />
+                  <div className="h-10 w-4/5 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+                  <div className="h-4 w-1/3 rounded-full bg-gray-200 dark:bg-gray-800" />
+                  <div className="flex flex-wrap gap-2">
                     {[...Array(4)].map((_, i) => (
-                      <div key={i} className="h-5 w-20 bg-gray-200 dark:bg-gray-800 rounded-full" />
+                      <div key={i} className="h-8 w-24 rounded-full bg-gray-200 dark:bg-gray-800" />
                     ))}
                   </div>
-                  <div className="space-y-2 pt-1">
-                    <div className="h-3 w-full bg-gray-200 dark:bg-gray-800 rounded-full" />
-                    <div className="h-3 w-5/6 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                    <div className="h-3 w-4/6 bg-gray-200 dark:bg-gray-800 rounded-full" />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-20 rounded-2xl bg-gray-100 dark:bg-gray-800/80" />
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2 pt-3">
-                    <div className="h-10 w-32 bg-gray-200 dark:bg-gray-800 rounded-xl" />
-                    <div className="h-10 w-44 bg-gray-200 dark:bg-gray-800 rounded-xl" />
+                  <div className="h-28 rounded-[24px] bg-gray-100 dark:bg-gray-800/80" />
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <div className="h-11 flex-1 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+                    <div className="h-11 flex-1 rounded-2xl bg-gray-200 dark:bg-gray-800" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Reviews */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden lg:h-[560px] flex flex-col">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <div className="h-4 w-28 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                <div className="h-4 w-16 bg-gray-200 dark:bg-gray-800 rounded-full" />
-              </div>
-              <div className="p-4 flex-1 min-h-0 space-y-3">
-                {[...Array(2)].map((_, i) => (
-                  <div key={i} className="border border-gray-100 dark:border-gray-800 rounded-2xl p-3 space-y-2">
-                    <div className="h-3 w-1/3 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                    <div className="h-3 w-full bg-gray-200 dark:bg-gray-800 rounded-full" />
-                    <div className="h-3 w-4/6 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                  </div>
-                ))}
-                <div className="mt-auto border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3">
-                  <div className="h-3 w-36 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                  <div className="h-24 w-full bg-gray-200 dark:bg-gray-800 rounded-2xl" />
-                  <div className="flex items-center justify-between">
-                    <div className="h-3 w-20 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                    <div className="h-9 w-28 bg-gray-200 dark:bg-gray-800 rounded-xl" />
+            <div className="rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="h-16 border-b border-gray-100 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/70" />
+              <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="space-y-3 p-5 sm:p-6">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-800/70">
+                      <div className="h-3 w-1/4 rounded-full bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-3 h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-2 h-3 w-4/5 rounded-full bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-gray-100 p-5 dark:border-gray-800 lg:border-l lg:border-t-0">
+                  <div className="h-4 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
+                  <div className="mt-4 h-28 rounded-2xl bg-gray-100 dark:bg-gray-800/80" />
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="h-3 w-20 rounded-full bg-gray-200 dark:bg-gray-800" />
+                    <div className="h-10 w-28 rounded-2xl bg-gray-200 dark:bg-gray-800" />
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="xl:hidden rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="h-5 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
+              <div className="mt-4 space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-800/70">
+                    <div className="h-20 w-14 bg-gray-200 dark:bg-gray-700" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-4/5 rounded-full bg-gray-200 dark:bg-gray-700" />
+                      <div className="h-3 w-2/5 rounded-full bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Similar books */}
-          <aside className="hidden lg:block lg:col-span-4">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-5 lg:h-[560px]">
-              <div className="h-5 w-40 bg-gray-200 dark:bg-gray-800 rounded-full mb-4" />
-              <div className="space-y-3">
+          <aside className="hidden xl:block">
+            <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="h-5 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
+              <div className="mt-4 space-y-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-16 h-20 bg-gray-200 dark:bg-gray-800 rounded-xl" />
+                  <div key={i} className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-800/70">
+                    <div className="h-20 w-14 bg-gray-200 dark:bg-gray-700" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-3 w-4/5 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                      <div className="h-3 w-2/5 bg-gray-200 dark:bg-gray-800 rounded-full" />
+                      <div className="h-3 w-4/5 rounded-full bg-gray-200 dark:bg-gray-700" />
+                      <div className="h-3 w-2/5 rounded-full bg-gray-200 dark:bg-gray-700" />
                     </div>
                   </div>
                 ))}
@@ -225,18 +237,14 @@ function Skeleton() {
           </aside>
         </div>
 
-        {/* Bottom recommendations */}
-        <div className="mt-8 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-          <div className="h-5 w-44 bg-gray-200 dark:bg-gray-800 rounded-full mb-4" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="mt-8 rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+          <div className="h-5 w-40 rounded-full bg-gray-200 dark:bg-gray-800" />
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(175px,1fr))] md:gap-x-4 md:gap-y-7">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
-                <div className="h-44 bg-gray-200 dark:bg-gray-800" />
-                <div className="p-4 space-y-2">
-                  <div className="h-3 w-4/5 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                  <div className="h-3 w-2/5 bg-gray-200 dark:bg-gray-800 rounded-full" />
-                  <div className="h-8 w-full bg-gray-200 dark:bg-gray-800 rounded-xl mt-2" />
-                </div>
+              <div key={i} className="space-y-3">
+                <div className="aspect-[175/266] w-full bg-gray-200 dark:bg-gray-800" />
+                <div className="h-4 w-4/5 bg-gray-200 dark:bg-gray-800" />
+                <div className="h-3 w-2/5 bg-gray-200 dark:bg-gray-800" />
               </div>
             ))}
           </div>
@@ -755,6 +763,14 @@ export default function BookDetailPage() {
   const myReview = myReviewId ? sortedReviews.find((r) => String(r?._id) === String(myReviewId)) : null;
   const previewReviews = myReview ? [myReview] : sortedReviews.slice(0, 2);
   const hasMoreReviews = sortedReviews.length > previewReviews.length;
+  const priceLabel = book.isPaid ? `Rs. ${book.price}` : "Free";
+  const accessLabel = canRead ? "Ready to read" : book.isPaid ? "Purchase required" : "Free access";
+  const otherInfo = [
+    { label: "Page Count", value: book.pageCount ? `${book.pageCount} Pages` : "Not added" },
+    { label: "Publication date", value: book.publicationDate?.trim() || "Not added" },
+    { label: "ISBN", value: book.isbn?.trim() || "Not added" },
+    { label: "Language", value: book.language?.trim() || "Not added" },
+  ];
 
   return (
     <>
@@ -775,57 +791,69 @@ export default function BookDetailPage() {
         />
       )}
 
-      <div className="min-h-screen bg-white dark:bg-gray-950">
-        <div className="page-container py-8">
+      <div className="min-h-screen bg-[#f7f7f3] dark:bg-gray-950">
+        <div className="page-container py-6">
 
           {/* Back */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mb-1"
+            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 transition-colors hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
           >
-            <HiArrowLeft /> Back to Library
+            <HiArrowLeft className="text-sm" /> Back to Library
           </button>
 
           {/* Book Card */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-4">
-            <div className="lg:col-span-8 space-y-6">
+          <div className="mt-5 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-6">
 
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden animate-fade-up">
-            <div className="flex flex-col sm:flex-row">
+          <section className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 animate-fade-up">
+            <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8">
 
               {/* Cover */}
-              <div className="sm:w-44 md:w-52 shrink-0">
-                {book.coverImage ? (
-                  <img
-                    src={book.coverImage}
-                    alt={book.title}
-                    className="w-full h-60 sm:h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-60 sm:h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-indigo-100 dark:from-slate-800 dark:to-indigo-950">
-                    <HiOutlineBookOpen className="text-indigo-300 dark:text-indigo-700 text-5xl" />
+              <div className="mx-auto w-full max-w-[220px] lg:mx-0">
+                <div className="overflow-hidden bg-white shadow-[0_18px_40px_rgba(15,23,42,0.1)] dark:bg-gray-900 dark:shadow-black/25">
+                  <div className="aspect-[175/266] w-full overflow-hidden bg-[#eef1e6]">
+                    {book.coverImage ? (
+                      <img
+                        src={book.coverImage}
+                        alt={book.title}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#eef5df] via-[#dce8c9] to-[#bac98e] dark:from-slate-800 dark:via-slate-700 dark:to-slate-600">
+                        <HiOutlineBookOpen className="text-5xl text-[#6a7f46] dark:text-slate-300" />
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Details */}
-              <div className="flex-1 p-4 sm:p-6 flex flex-col gap-3 min-w-0">
+              <div className="min-w-0 space-y-5">
 
                 {/* Title + Bookmark */}
                 <div className="flex items-start justify-between gap-3">
-                  <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white leading-tight">
-                    {book.title}
-                  </h1>
+                  <div className="min-w-0">
+                    <p className="font-ui text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                      Book Details
+                    </p>
+                    <h1 className="mt-2 font-display text-[2rem] font-semibold leading-tight tracking-[-0.02em] text-gray-950 dark:text-white sm:text-[2.45rem]">
+                      {book.title}
+                    </h1>
+                    <p className="font-ui mt-2 text-base text-gray-500 dark:text-gray-400">
+                      {book.author || "Unknown Author"}
+                    </p>
+                  </div>
                   <div className="relative shrink-0" ref={dropdownRef}>
                     <button
                       type="button"
                       onClick={() => setShowShelfMenu((v) => !v)}
                       title="Add to shelf"
-                      className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:border-indigo-200 hover:text-indigo-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                     >
                       {shelfStatus
-                        ? <HiBookmark className="text-indigo-600 text-xl" />
-                        : <HiOutlineBookmark className="text-gray-400 text-xl hover:text-indigo-500 transition-colors" />}
+                        ? <HiBookmark className="text-lg text-indigo-600" />
+                        : <HiOutlineBookmark className="text-lg" />}
                     </button>
                     {showShelfMenu && (
                       <ShelfDropdown
@@ -837,21 +865,33 @@ export default function BookDetailPage() {
                   </div>
                 </div>
 
-                {/* Author */}
-                <p className="text-sm text-gray-500 dark:text-gray-400 -mt-1">
-                  by <span className="font-semibold text-gray-700 dark:text-gray-300">{book.author}</span>
-                </p>
-
                 {/* Rating */}
-                <div className="flex items-center gap-2">
-                  <StarRating value={avgRating} readonly size="text-lg" />
-                  <span className="text-sm text-gray-400">
-                    {avgRating.toFixed(1)} - {totalReviews} rating{totalReviews !== 1 ? "s" : ""}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3.5 py-2 text-sm font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    <StarRating value={avgRating} readonly size="text-sm" />
+                    <span>{avgRating.toFixed(1)} · {totalReviews} reviews</span>
+                  </div>
+                  <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-3.5 py-2 text-sm font-semibold text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                    {priceLabel}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium ${
+                      canRead
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                    }`}
+                  >
+                    {canRead ? <HiOutlineCheckCircle /> : <HiOutlineLockClosed />}
+                    {accessLabel}
                   </span>
                 </div>
 
                 {/* Meta row */}
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                    <HiOutlineBookOpen className="text-sm text-gray-400" />
+                    {totalReads} reads
+                  </span>
                   {currentShelf && (
                     <Badge
                       color={
@@ -863,37 +903,57 @@ export default function BookDetailPage() {
                       {currentShelf.icon} {currentShelf.label}
                     </Badge>
                   )}
-                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
-                    <HiOutlineBookOpen className="shrink-0" /> {totalReads}
-                  </span>
                   {book.genre && <Badge>{book.genre}</Badge>}
                   {book.category && <Badge>{book.category}</Badge>}
-                  {book.isPaid ? <Badge color="indigo">Rs. {book.price}</Badge> : null}
                 </div>
 
                 {/* Description */}
-                <div className="pt-0.5">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">
+                <div className="rounded-[24px] bg-[#faf8f1] p-4 dark:bg-gray-800/70 sm:p-5">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">About this book</p>
+                  <p className="mt-2 line-clamp-4 text-sm leading-7 text-gray-600 dark:text-gray-400">
                     {book.description || "No description available."}
                   </p>
                   {isLongDesc && (
                     <button
                       type="button"
                       onClick={() => setShowDescModal(true)}
-                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-1 font-semibold"
+                      className="mt-2 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400"
                     >
-                      Read more
+                      Read full description
                     </button>
                   )}
                 </div>
 
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Other info</p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    {otherInfo.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-2xl border border-gray-200 bg-white p-3.5 dark:border-gray-700 dark:bg-gray-900"
+                      >
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                          {item.label}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* CTA */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 pt-1 mt-auto">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   {canRead ? (
                     <button
                       type="button"
-                      onClick={() => navigate(`/read/${book._id}`)}
-                      className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
+                      onClick={() =>
+                        navigate(`/read/${book._id}`, {
+                          state: { autoFullscreen: true, fromBookDetail: true },
+                        })
+                      }
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 sm:w-auto"
                     >
                       <HiOutlineBookOpen /> Read Now
                     </button>
@@ -901,54 +961,53 @@ export default function BookDetailPage() {
                     <button
                       type="button"
                       onClick={() => navigate(`/purchase/${book._id}`)}
-                      className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 sm:w-auto"
                     >
-                      Buy · Rs. {book.price}
+                      Buy for {priceLabel}
                     </button>
                   )}
-                  <span
-                    className={`inline-flex w-full sm:w-auto justify-center items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border ${
-                      canRead
-                        ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800/40"
-                        : "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/30 dark:border-amber-800/40"
-                    }`}
-                  >
-                    {canRead ? <HiOutlineCheckCircle /> : <HiOutlineLockClosed />}
-                    {canRead ? "Access granted" : "Purchase required"}
-                  </span>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Reviews Card */}
-          <div className={`bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden animate-fade-up-2 flex flex-col`}>
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <HiOutlineChatBubbleLeftRight className="text-indigo-500 text-sm" />
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">Reviews</span>
+          <section className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 animate-fade-up-2">
+              <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800 sm:px-6 sm:py-5 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+                    Reader Feedback
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <HiOutlineChatBubbleLeftRight className="text-sm text-indigo-500" />
+                    <span className="text-lg font-semibold text-gray-900 dark:text-white">Reviews</span>
                   {reviews.length > 0 && (
-                    <span className="text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">
+                    <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                       {reviews.length}
                     </span>
                   )}
+                  </div>
                 </div>
-                {hasMoreReviews && (
-                  <button
-                    onClick={() => setShowReviewsModal(true)}
-                    className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline transition-colors"
-                  >
-                    See more
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="rounded-full bg-[#faf8f1] px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    {avgRating.toFixed(1)} average
+                  </div>
+                  {hasMoreReviews && (
+                    <button
+                      onClick={() => setShowReviewsModal(true)}
+                      className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400"
+                    >
+                      See all
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="px-4 pt-3 pb-2 space-y-3 flex-1 min-h-0 overflow-y-auto scrollbar-none">
-                {/* Preview reviews */}
-                {previewReviews.length > 0 && (
-                  <div className="-mx-4 border-t border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
-                    {previewReviews.map((r) => (
-                      <div key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+              <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="min-h-[220px] divide-y divide-gray-100 dark:divide-gray-800">
+                  {previewReviews.length > 0 ? (
+                    previewReviews.map((r) => (
+                      <div key={r._id} className="px-1 py-1 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40 sm:px-2">
                         <ReviewRow
                           review={r}
                           compact
@@ -960,12 +1019,22 @@ export default function BookDetailPage() {
                           onDelete={myReviewId ? handleDeleteMyReview : undefined}
                         />
                       </div>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  ) : (
+                    <div className="flex min-h-[220px] items-center justify-center px-6 py-12 text-center">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">No reviews yet</p>
+                        <p className="mt-1 text-sm text-gray-400">Be the first reader to share a quick impression.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Write / edit review */}
-                <div ref={reviewEditorRef} className="border-t border-gray-100 dark:border-gray-800 p-4 space-y-3">
+                <div
+                  ref={reviewEditorRef}
+                  className="border-t border-gray-100 bg-[#fcfcf8] p-5 dark:border-gray-800 dark:bg-gray-900/80 sm:p-6 lg:border-l lg:border-t-0"
+                >
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       {myReviewId ? "Edit your review" : "Write a review"}
@@ -974,25 +1043,25 @@ export default function BookDetailPage() {
                   </div>
 
                   {!isLoggedIn ? (
-                    <p className="text-sm text-gray-400 italic">
+                    <p className="mt-4 text-sm text-gray-400">
                       <button
                         onClick={() => navigate("/auth/login")}
-                        className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+                        className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
                       >
                         Sign in
                       </button>{" "}
                       to leave a review.
                     </p>
                   ) : (
-                    <>
+                    <div className="mt-4 space-y-4">
                       <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="Share your thoughts about this book..."
-                        rows={3}
-                        className="w-full text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 bg-white dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                        rows={4}
+                        className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 transition-all placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                       />
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
                         <span className="text-xs text-gray-400">
                           {myRating > 0 ? `${myRating} star${myRating > 1 ? "s" : ""}` : "No rating"}
                         </span>
@@ -1000,27 +1069,38 @@ export default function BookDetailPage() {
                           type="button"
                           onClick={handleComment}
                           disabled={!comment.trim() || posting || deletingReview}
-                          className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-all"
+                          className="rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {posting ? "Saving..." : myReviewId ? "Update" : "Post"}
                         </button>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
+          </section>
+
+          <div className="xl:hidden animate-fade-up">
+            <ContentBasedFilteringSidebar
+              books={recommendations}
+              loading={recommendationsLoading}
+              title="Similar books"
+              variant="large"
+              maxItems={4}
+              className="rounded-[28px] border-gray-100 shadow-sm dark:border-gray-800"
+            />
           </div>
 
-          {/* Recommendations */}
           </div>
-            <aside className="hidden lg:block lg:col-span-4">
-              <div className="lg:sticky lg:top-20 space-y-5 animate-fade-up">
+            <aside className="hidden xl:block">
+              <div className="xl:sticky xl:top-24 animate-fade-up">
                 <ContentBasedFilteringSidebar
                   books={recommendations}
                   loading={recommendationsLoading}
                   title="Similar books"
                   variant="large"
                   maxItems={4}
+                  className="rounded-[28px] border-gray-100 shadow-sm dark:border-gray-800"
                 />
               </div>
             </aside>
