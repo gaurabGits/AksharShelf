@@ -152,69 +152,29 @@ function Skeleton() {
       <div className="page-container py-6">
         <div className="h-3 w-28 rounded-full bg-gray-200 dark:bg-gray-800" />
 
-        <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="space-y-6">
-            <div className="rounded-[28px] border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6">
-              <div className="grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
-                <div className="mx-auto aspect-[175/266] w-full max-w-[220px] bg-gray-200 dark:bg-gray-800" />
-                <div className="space-y-4">
-                  <div className="h-3 w-24 rounded-full bg-gray-200 dark:bg-gray-800" />
-                  <div className="h-10 w-4/5 rounded-2xl bg-gray-200 dark:bg-gray-800" />
-                  <div className="h-4 w-1/3 rounded-full bg-gray-200 dark:bg-gray-800" />
-                  <div className="flex flex-wrap gap-2">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="h-8 w-24 rounded-full bg-gray-200 dark:bg-gray-800" />
-                    ))}
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="h-20 rounded-2xl bg-gray-100 dark:bg-gray-800/80" />
-                    ))}
-                  </div>
-                  <div className="h-28 rounded-[24px] bg-gray-100 dark:bg-gray-800/80" />
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <div className="h-11 flex-1 rounded-2xl bg-gray-200 dark:bg-gray-800" />
-                    <div className="h-11 flex-1 rounded-2xl bg-gray-200 dark:bg-gray-800" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="h-16 border-b border-gray-100 bg-gray-50/70 dark:border-gray-800 dark:bg-gray-900/70" />
-              <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-                <div className="space-y-3 p-5 sm:p-6">
-                  {[...Array(2)].map((_, i) => (
-                    <div key={i} className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-800/70">
-                      <div className="h-3 w-1/4 rounded-full bg-gray-200 dark:bg-gray-700" />
-                      <div className="mt-3 h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700" />
-                      <div className="mt-2 h-3 w-4/5 rounded-full bg-gray-200 dark:bg-gray-700" />
-                    </div>
+        <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="rounded-[28px] border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6">
+            <div className="grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-start">
+              <div className="mx-auto aspect-[175/266] w-full max-w-[220px] rounded-[24px] bg-gray-200 dark:bg-gray-800" />
+              <div className="space-y-4">
+                <div className="h-3 w-24 rounded-full bg-gray-200 dark:bg-gray-800" />
+                <div className="h-10 w-4/5 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+                <div className="h-4 w-1/3 rounded-full bg-gray-200 dark:bg-gray-800" />
+                <div className="flex flex-wrap gap-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-8 w-24 rounded-full bg-gray-200 dark:bg-gray-800" />
                   ))}
                 </div>
-                <div className="border-t border-gray-100 p-5 dark:border-gray-800 lg:border-l lg:border-t-0">
-                  <div className="h-4 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
-                  <div className="mt-4 h-28 rounded-2xl bg-gray-100 dark:bg-gray-800/80" />
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="h-3 w-20 rounded-full bg-gray-200 dark:bg-gray-800" />
-                    <div className="h-10 w-28 rounded-2xl bg-gray-200 dark:bg-gray-800" />
-                  </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-20 rounded-2xl bg-gray-100 dark:bg-gray-800/80" />
+                  ))}
                 </div>
-              </div>
-            </div>
-
-            <div className="xl:hidden rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="h-5 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
-              <div className="mt-4 space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-800/70">
-                    <div className="h-20 w-14 bg-gray-200 dark:bg-gray-700" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 w-4/5 rounded-full bg-gray-200 dark:bg-gray-700" />
-                      <div className="h-3 w-2/5 rounded-full bg-gray-200 dark:bg-gray-700" />
-                    </div>
-                  </div>
-                ))}
+                <div className="h-24 rounded-[24px] bg-gray-100 dark:bg-gray-800/80" />
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="h-11 flex-1 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+                  <div className="h-11 flex-1 rounded-2xl bg-gray-200 dark:bg-gray-800" />
+                </div>
               </div>
             </div>
           </div>
@@ -223,9 +183,9 @@ function Skeleton() {
             <div className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
               <div className="h-5 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
               <div className="mt-4 space-y-3">
-                {[...Array(4)].map((_, i) => (
+                {[...Array(3)].map((_, i) => (
                   <div key={i} className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3 dark:bg-gray-800/70">
-                    <div className="h-20 w-14 bg-gray-200 dark:bg-gray-700" />
+                    <div className="h-20 w-14 rounded-xl bg-gray-200 dark:bg-gray-700" />
                     <div className="flex-1 space-y-2">
                       <div className="h-3 w-4/5 rounded-full bg-gray-200 dark:bg-gray-700" />
                       <div className="h-3 w-2/5 rounded-full bg-gray-200 dark:bg-gray-700" />
@@ -235,19 +195,6 @@ function Skeleton() {
               </div>
             </div>
           </aside>
-        </div>
-
-        <div className="mt-8 rounded-[28px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-6">
-          <div className="h-5 w-40 rounded-full bg-gray-200 dark:bg-gray-800" />
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(175px,1fr))] md:gap-x-4 md:gap-y-7">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-3">
-                <div className="aspect-[175/266] w-full bg-gray-200 dark:bg-gray-800" />
-                <div className="h-4 w-4/5 bg-gray-200 dark:bg-gray-800" />
-                <div className="h-3 w-2/5 bg-gray-200 dark:bg-gray-800" />
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
@@ -529,6 +476,7 @@ export default function BookDetailPage() {
   const navigate = useNavigate();
   const notify = useNotification();
   const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [access, setAccess] = useState(null);
   const [error, setError] = useState(null);
   const [shelfStatus, setShelfStatus] = useState(null);
@@ -553,6 +501,7 @@ export default function BookDetailPage() {
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
     setError(null); setBook(null); setAccess(null); setReviews([]);
     setShelfStatus(null); setMyReviewId(null); setMyRating(0); setComment("");
     setOpenReviewMenuId("");
@@ -612,7 +561,11 @@ export default function BookDetailPage() {
       } catch {
         if (active) setError("Could not load book details.");
       } finally {
-        if (active) { setRecommendationsLoading(false); setCollabRecommendationsLoading(false); }
+        if (active) {
+          setLoading(false);
+          setRecommendationsLoading(false);
+          setCollabRecommendationsLoading(false);
+        }
       }
     };
     load();
@@ -747,7 +700,8 @@ export default function BookDetailPage() {
     </div>
   );
 
-  if (!book) return <Skeleton />;
+  if (loading) return <Skeleton />;
+  if (!book) return null;
 
   const canRead       = access?.canRead;
   const avgRating     = Number.isFinite(book.averageRating) ? book.averageRating : 0;
