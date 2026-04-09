@@ -21,6 +21,10 @@ export const fetchAllBooks = () => axios.get(`${BASE_URL}/books`, authHeaders())
 export const addBook = (data) => axios.post(`${BASE_URL}/books`, data, authHeaders());
 export const editBook = (id, data) => axios.put(`${BASE_URL}/books/${id}`, data, authHeaders());
 export const deleteBook = (id) => axios.delete(`${BASE_URL}/books/${id}`, authHeaders());
+export const deleteAllBooks = (data) =>
+  axios.delete(`${BASE_URL}/books/bulk-delete`, { ...authHeaders(), data });
+export const fetchBookDeletionHistory = (params = {}) =>
+  axios.get(`${BASE_URL}/books/deletion-history`, { ...authHeaders(), params });
 
 export const fetchAllReviews = () => axios.get(`${BASE_URL}/reviews`, authHeaders());
 export const deleteReviewById = (id) => axios.delete(`${BASE_URL}/reviews/${id}`, authHeaders());

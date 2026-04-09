@@ -1,14 +1,84 @@
 import { useEffect, useState, useMemo } from "react";
-import {
-  HiOutlineMagnifyingGlass,
-  HiOutlineBookOpen,
-} from "react-icons/hi2";
+import { HiOutlineMagnifyingGlass, HiOutlineBookOpen, HiXMark } from "react-icons/hi2";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "../services/api";
 import BookCard, { BookCardSkeleton } from "../components/BookCard";
 
 const SKELETON_COUNT = 8;
 
+/* tiny helpers */
+
+const Badge = ({ children, className = "" }) => (
+  <span
+    className={`inline-flex items-center rounded-sm px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${className}`}
+  >
+    {children}
+  </span>
+);
+
+/* MiniCard (Recently Added) */
+const MiniCard = ({ book, onClick }) => (
+  <button
+    onClick={onClick}
+    className="group text-left w-[186px] focus:outline-none"
+  >
+    {/* Cover */}
+    <div className="relative overflow-hidden rounded-[3px] shadow-[2px_4px_14px_rgba(60,40,10,0.13)] transition-all duration-300 group-hover:shadow-[2px_8px_24px_rgba(60,40,10,0.22)]">
+      <div className="aspect-[186/266] w-[186px] bg-indigo-50">
+        {book.coverImage ? (
+          <img
+            src={book.coverImage}
+            alt={book.title}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-indigo-50 via-violet-50 to-indigo-100">
+            <HiOutlineBookOpen className="text-4xl text-indigo-300" />
+          </div>
+        )}
+      </div>
+
+      {/* "New" ribbon */}
+      <span
+        className="absolute left-0 top-4 bg-indigo-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white shadow"
+        style={{ borderRadius: "0 2px 2px 0" }}
+      >
+        New
+      </span>
+    </div>
+
+    {/* Meta */}
+    <div className="mt-2.5 px-0.5">
+      <p className="line-clamp-2 text-[16px] font-semibold leading-[1.28] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
+        {book.title}
+      </p>
+      <p className="font-sans italic mt-1 text-[14px] font-semibold leading-[1.35] text-stone-500 dark:text-stone-400">
+        by <span className="font-medium italic text-stone-900 dark:text-stone-100">
+          {book.author || "Unknown Author"}
+        </span>
+      </p>
+
+      <p className="font-sans mt-3 text-[14px] font-semibold leading-[1.35] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
+        {book.isPaid ? `Rs. ${book.price}` : "Free"}
+      </p>
+    </div>
+  </button>
+);
+
+/* Skeleton for MiniCard */
+const MiniCardSkeleton = () => (
+  <div className="w-[186px] animate-pulse">
+    <div className="aspect-[186/266] w-[186px] rounded-[3px] bg-stone-200 dark:bg-stone-700" />
+    <div className="mt-2.5 space-y-1.5 px-0.5">
+      <div className="h-3.5 w-4/5 rounded bg-stone-200 dark:bg-stone-700" />
+      <div className="h-3 w-1/2 rounded bg-stone-100 dark:bg-stone-800" />
+      <div className="h-3 w-1/3 rounded bg-stone-200 dark:bg-stone-700" />
+      <div className="h-3 w-1/3 rounded bg-stone-200 dark:bg-stone-700" />
+    </div>
+  </div>
+);
+
+/* Main Page */
 export default function BooksPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -17,13 +87,13 @@ export default function BooksPage() {
   const [allBooks, setAllBooks] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState("");
-  const [filter, setFilter] = useState(() => {
-    const initial = String(searchParams.get("filter") || "all").toLowerCase();
-    return initial === "free" || initial === "paid" || initial === "all" ? initial : "all";
+  const [filter, setFilter]     = useState(() => {
+    const v = String(searchParams.get("filter") || "all").toLowerCase();
+    return ["free", "paid", "all"].includes(v) ? v : "all";
   });
 
   useEffect(() => {
-    const fetchBooks = async () => {
+    (async () => {
       setLoading(true);
       try {
         const res      = await API.get("/books");
@@ -36,188 +106,193 @@ export default function BooksPage() {
       } finally {
         setLoading(false);
       }
-    };
-    fetchBooks();
+    })();
   }, []);
 
   const filteredBooks = useMemo(() => {
     let list = [...books];
     if (search) {
+      const q = search.toLowerCase();
       list = list.filter(
-        (b) =>
-          b.title?.toLowerCase().includes(search.toLowerCase()) ||
-          b.author?.toLowerCase().includes(search.toLowerCase())
+        (b) => b.title?.toLowerCase().includes(q) || b.author?.toLowerCase().includes(q),
       );
     }
     if (filter === "free") list = list.filter((b) => !b.isPaid);
     if (filter === "paid") list = list.filter((b) =>  b.isPaid);
+
+    // Sort by popularity (most reads first)
+    list.sort((a, b) => {
+      const readsA = Number(a?.reads) || 0;
+      const readsB = Number(b?.reads) || 0;
+      if (readsB !== readsA) return readsB - readsA;
+      return (new Date(b?.createdAt).getTime() || 0) - (new Date(a?.createdAt).getTime() || 0);
+    });
     return list;
   }, [books, search, filter]);
 
-  const recentBooks = useMemo(() => {
-    return [...allBooks]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 4);
-  }, [allBooks]);
-
-  // Mini Car─
-  const isSearching = search.trim().length > 0;
-  const shouldShowRecentlyAdded =
-	    !loading && recentBooks.length > 0 && !isSearching;
-
-  const MiniCard = ({ book }) => (
-    <div
-      onClick={() => navigate(`/books/${book._id}`)}
-      className="group w-full min-w-0 cursor-pointer"
-    >
-      <div className="overflow-hidden bg-white p-0 shadow-[0_16px_34px_rgba(15,23,42,0.08)] transition duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_20px_42px_rgba(15,23,42,0.14)] dark:bg-gray-900 dark:shadow-black/30">
-        <div className="relative aspect-[175/266] w-full overflow-hidden bg-[#eef1e6]">
-          {book.coverImage ? (
-            <img
-              src={book.coverImage}
-              alt={book.title}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#eef5df] via-[#dce8c9] to-[#bac98e] dark:from-slate-800 dark:via-slate-700 dark:to-slate-600">
-              <HiOutlineBookOpen className="text-5xl text-[#6a7f46] dark:text-slate-300" />
-            </div>
-          )}
-
-          <span className="absolute right-3 top-3 rounded-[8px] bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-gray-700 shadow-sm">
-            New
-          </span>
-        </div>
-      </div>
-
-      <div className="px-0 pt-3">
-        <p className="font-display line-clamp-2 text-[16px] font-semibold leading-[1.28] tracking-[-0.01em] text-gray-950 dark:text-white">
-          {book.title}
-        </p>
-        <p className="font-ui mt-1 truncate text-[14px] leading-[1.35] text-gray-500 dark:text-gray-400">{book.author}</p>
-      </div>
-    </div>
+  const recentBooks = useMemo(
+    () =>
+      [...allBooks]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 6),
+    [allBooks],
   );
 
+  const isSearching             = search.trim().length > 0;
+  const shouldShowRecentlyAdded = !loading && recentBooks.length > 0 && !isSearching;
+
+  /*  Render  */
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <div className="page-container py-10">
-        <div className="flex flex-col gap-10">
+    <div className="min-h-screen bg-[#faf8f3] dark:bg-[#18160f]">
 
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-              Books
-            </h1>
-            <p className="text-sm text-gray-400 mt-1">
-              {loading ? "Loading..." : `${filteredBooks.length} books available`}
-            </p>
-          </div>
+      {/*  Top bar */}
+      <div className="border-b border-stone-200/80 bg-[#faf8f3] dark:border-stone-800 dark:bg-[#18160f]">
+        <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
-          {/* Search */}
-          <div className="relative w-full sm:w-72">
-            <HiOutlineMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search books or authors..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400 dark:focus:border-indigo-600 shadow-sm transition-all"
-            />
-            {isSearching && recentBooks.length > 0 && (
-              <p className="mt-1 text-[11px] text-gray-400">
-                Recently added is hidden while searching.
+            {/* Title */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-indigo-900 dark:text-indigo-400 mb-1">
+                Library
               </p>
-            )}
+              <h1 className="font-serif text-[2.1rem] font-bold leading-none tracking-tight text-stone-900 dark:text-stone-50">
+                Books
+              </h1>
+              <p className="font-sans text-[14px] mt-1.5 text-stone-400 dark:text-stone-500">
+                {loading
+                  ? "Loading catalogue…"
+                  : `${filteredBooks.length.toLocaleString()} title${filteredBooks.length !== 1 ? "s" : ""} in the catalogue`}
+              </p>
+            </div>
+
+            {/* Search */}
+            <div className="relative w-full sm:w-80">
+              <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input
+                type="text"
+                placeholder="Search by title or author…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-sm border border-stone-300 bg-white py-2.5 pl-10 pr-9 text-[13.5px] text-stone-800 placeholder-stone-400 shadow-sm transition focus:border-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-900/15 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder-stone-600 dark:focus:border-indigo-500"
+              />
+              {isSearching && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+                >
+                  <HiXMark className="text-base" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Recently Added Section */}
-        {shouldShowRecentlyAdded && (
+      {/*  Page body */}
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 space-y-12">
+
+        {/*  Recently Added */}
+        {(shouldShowRecentlyAdded || loading) && (
           <section>
-            {/* Section header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                  Recently Added
-                </h2>
-              </div>
+            <div className="mb-5 flex items-center gap-3">
+              <h2 className="font-serif text-[17px] font-semibold text-stone-800 dark:text-stone-100">
+                Recently Added
+              </h2>
             </div>
-            <div className="grid w-full grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(175px,1fr))] md:gap-x-4">
-              {recentBooks.map((book) => (
-                <MiniCard key={book._id} book={book} />
-              ))}
+
+            <div className="grid grid-cols-2 justify-items-start gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-6">
+              {loading
+                ? Array(6).fill(0).map((_, i) => <MiniCardSkeleton key={i} />)
+                : recentBooks.map((book) => (
+                    <MiniCard
+                      key={book._id}
+                      book={book}
+                      onClick={() => navigate(`/books/${book._id}`)}
+                    />
+                  ))}
             </div>
           </section>
         )}
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 -my-2">
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-          <span className="text-xs text-gray-400 font-medium uppercase tracking-widest">
-            All Books
-          </span>
-          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { id: "all",  label: "All Books"  },
-            { id: "free", label: "Free Books" },
-            { id: "paid", label: "Paid Books" },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setFilter(item.id)}
-              className={`px-4 py-2 text-xs font-medium rounded-full border transition-all ${
-                filter === item.id
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:text-indigo-600"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Main Book Grid */}
-        <div className="grid w-full grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(175px,1fr))] md:gap-x-4 md:gap-y-7">
-          {loading
-            ? Array(SKELETON_COUNT).fill(0).map((_, i) => <BookCardSkeleton key={i} />)
-            : filteredBooks.map((book) => (
-                <BookCard
-                  key={book._id}
-                  book={book}
-                  onClick={() => navigate(`/books/${book._id}`)}
-                />
-              ))
-          }
-        </div>
-
-        {/* Empty State─ */}
-        {!loading && filteredBooks.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center">
-              <HiOutlineBookOpen className="text-3xl text-indigo-400" />
+        {/*  All Books */}
+        <section>
+          {/* Section header + filter tabs */}
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <h2 className="font-serif text-[17px] font-semibold text-stone-800 dark:text-stone-100">
+                All Books
+              </h2>
+              <div className="flex-1 border-t border-dashed border-stone-300 dark:border-stone-700" />
             </div>
-            <div className="text-center">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No books found</p>
-              <p className="text-xs text-gray-400 mt-1">Try adjusting your search or filter</p>
+
+            {/* Filter pills */}
+            <div className="flex items-center gap-1.5">
+              {[
+                { id: "all",  label: "All"  },
+                { id: "free", label: "Free" },
+                { id: "paid", label: "Paid" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setFilter(item.id)}
+                  className={`rounded-sm border px-3.5 py-1.5 text-[11.5px] font-semibold uppercase tracking-wider transition-all ${
+                    filter === item.id
+                      ? "border-indigo-900 bg-indigo-900 text-white shadow-sm"
+                      : "border-stone-300 bg-white text-stone-500 hover:border-indigo-700 hover:text-indigo-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400 dark:hover:border-indigo-500 dark:hover:text-indigo-300"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                Clear search
-              </button>
-            )}
           </div>
-        )}
 
-        </div>
+          {/* Search hint */}
+          {isSearching && (
+            <p className="mb-4 text-[12px] text-stone-400 dark:text-stone-500">
+              Showing results for{" "}
+              <span className="font-semibold text-stone-600 dark:text-stone-300">"{search}"</span>
+            </p>
+          )}
+
+          {/* Grid */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(175px,1fr))] md:gap-x-5 md:gap-y-8">
+            {loading
+              ? Array(SKELETON_COUNT).fill(0).map((_, i) => <BookCardSkeleton key={i} />)
+              : filteredBooks.map((book) => (
+                  <BookCard
+                    key={book._id}
+                    book={book}
+                    onClick={() => navigate(`/books/${book._id}`)}
+                  />
+                ))}
+          </div>
+
+          {/* Empty state */}
+          {!loading && filteredBooks.length === 0 && (
+            <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-sm border border-dashed border-stone-300 dark:border-stone-700">
+                <HiOutlineBookOpen className="text-3xl text-stone-300 dark:text-stone-600" />
+              </div>
+              <div>
+                <p className="font-serif text-[15px] font-semibold text-stone-700 dark:text-stone-300">
+                  No titles found
+                </p>
+                <p className="mt-1 text-[12.5px] text-stone-400">
+                  Try a different search term or filter.
+                </p>
+              </div>
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="mt-1 text-[12px] font-medium text-indigo-900 underline underline-offset-2 hover:text-indigo-700 dark:text-indigo-400"
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

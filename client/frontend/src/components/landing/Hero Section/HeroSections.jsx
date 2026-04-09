@@ -3,9 +3,10 @@ import { HiArrowRight} from "react-icons/hi2";
 import FannedBooks from "./FannedBooks";
 import { useEffect, useState } from "react";
 import API from "../../../services/api";
+import { getHomeSectionHref, HOME_SECTIONS } from "../../../utils/homeSections";
 
 
-function HeroSection({ onStartFree }) {
+function HeroSection() {
   const isLoggedIn = Boolean(localStorage.getItem("token"));
   const [totalUsers, setTotalUsers] = useState(null);
   const [lastUsers, setLastUsers] = useState([]);
@@ -120,12 +121,12 @@ function HeroSection({ onStartFree }) {
                 >
                   Browse Books <HiArrowRight />
                 </Link>
-                <button
-                  onClick={onStartFree}
+                <Link
+                  to={getHomeSectionHref(HOME_SECTIONS.freeBooks)}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-700 transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-800 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 sm:w-auto"
                 >
                   Start for free
-                </button>
+                </Link>
               </div>
 
               {!isLoggedIn && (

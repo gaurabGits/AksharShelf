@@ -104,11 +104,16 @@ const readBook = async (req, res) => {
     }
 
     // Paid book check
+    const userId = req.user?.id ?? null;
     const isAdmin = String(req.user?.role || "").toLowerCase() === "admin";
     if (book.isPaid && !isAdmin) {
+      if (!userId) {
+        return res.status(401).json({ message: "Login required to read this paid book." });
+      }
+
       const now = new Date();
       const purchase = await Purchase.findOne({
-        user: req.user.id,
+        user: userId,
         book: book._id,
         $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
       });
@@ -118,7 +123,7 @@ const readBook = async (req, res) => {
       }
     }
 
-    const didMarkRead = await markActivityOnce({ userId: req.user?.id, bookId: book._id, field: "readAt" });
+    const didMarkRead = await markActivityOnce({ userId, bookId: book._id, field: "readAt" });
     if (didMarkRead) {
       await Book.updateOne({ _id: book._id }, { $inc: { reads: 1 } }, { timestamps: false });
     }

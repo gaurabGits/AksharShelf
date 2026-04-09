@@ -191,7 +191,11 @@ function PurchasePage() {
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
-                    onClick={() => navigate(`/read/${bookId}`)}
+                    onClick={() =>
+                      navigate(`/read/${bookId}`, {
+                        state: { bookTitle: book?.title?.trim() || "Book Reader" },
+                      })
+                    }
                     className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold"
                   >
                     Read now

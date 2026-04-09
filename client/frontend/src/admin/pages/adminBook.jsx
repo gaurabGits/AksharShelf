@@ -1,8 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { pdfjs } from 'react-pdf';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import AdminNavbar from '../Components/adminNavbar';
-import { addBook, deleteBook, editBook, fetchAllBooks } from '../adminAPI';
+import {
+  addBook,
+  deleteAllBooks,
+  deleteBook,
+  editBook,
+  fetchAllBooks,
+  fetchBookDeletionHistory,
+} from '../adminAPI';
+import { useAdminAuth } from '../useAdminAuth';
 import { useNotification } from '../../context/Notification';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -24,6 +32,24 @@ const initialForm = {
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
+const DELETE_ALL_BOOKS_CONFIRM_TEXT = 'DELETE ALL BOOKS';
+
+const formatDateTime = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Unknown time';
+
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch {
+    return date.toLocaleString();
+  }
+};
 
 const readPdfPageCount = async (file) => {
   const buffer = await file.arrayBuffer();
@@ -32,6 +58,7 @@ const readPdfPageCount = async (file) => {
 };
 
 const AdminBook = () => {
+  const { admin } = useAdminAuth();
   const notify = useNotification();
   const [books, setBooks]           = useState([]);
   const [form, setForm]             = useState(initialForm);
@@ -40,6 +67,16 @@ const AdminBook = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]           = useState('');
   const [imgError, setImgError]     = useState(false);
+  const [deleteHistory, setDeleteHistory] = useState([]);
+  const [loadingDeleteHistory, setLoadingDeleteHistory] = useState(true);
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [deleteAllSubmitting, setDeleteAllSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAllBooks, setShowAllBooks] = useState(false);
+  const [deleteAllForm, setDeleteAllForm] = useState({
+    typedUsername: '',
+    confirmationText: '',
+  });
 
   // File preview states
   const [coverPreview, setCoverPreview] = useState(''); // base64 or URL
@@ -50,8 +87,22 @@ const AdminBook = () => {
   const pdfInputRef   = useRef(null);
 
   const isEditing = useMemo(() => Boolean(editingId), [editingId]);
+  const filteredBooks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return books;
 
-  const loadBooks = async () => {
+    return books.filter((book) =>
+      [book.title, book.author, book.category, book.isbn]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query))
+    );
+  }, [books, searchQuery]);
+  const displayedBooks = useMemo(
+    () => (showAllBooks ? filteredBooks : filteredBooks.slice(0, 10)),
+    [filteredBooks, showAllBooks]
+  );
+
+  const loadBooks = useCallback(async () => {
     try {
       const { data } = await fetchAllBooks();
       setBooks(Array.isArray(data) ? data : []);
@@ -62,10 +113,29 @@ const AdminBook = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [notify]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadBooks(); }, []);
+  const loadDeleteHistory = useCallback(async () => {
+    setLoadingDeleteHistory(true);
+    try {
+      const { data } = await fetchBookDeletionHistory({ limit: 6 });
+      setDeleteHistory(Array.isArray(data?.history) ? data.history : []);
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to load deletion history';
+      notify.error('History Error', message);
+    } finally {
+      setLoadingDeleteHistory(false);
+    }
+  }, [notify]);
+
+  useEffect(() => {
+    loadBooks();
+    loadDeleteHistory();
+  }, [loadBooks, loadDeleteHistory]);
+
+  useEffect(() => {
+    setShowAllBooks(false);
+  }, [searchQuery]);
 
   const resetForm = () => {
     setForm(initialForm);
@@ -76,6 +146,13 @@ const AdminBook = () => {
     // Clear file inputs
     if (imageInputRef.current) imageInputRef.current.value = '';
     if (pdfInputRef.current)   pdfInputRef.current.value   = '';
+  };
+
+  const resetDeleteAllForm = () => {
+    setDeleteAllForm({
+      typedUsername: '',
+      confirmationText: '',
+    });
   };
 
   const onChange = (e) => {
@@ -260,6 +337,49 @@ const AdminBook = () => {
       const message = err.response?.data?.message || 'Failed to delete book';
       setError(message);
       notify.error('Delete Error', message);
+    }
+  };
+
+  const handleDeleteAllBooks = async () => {
+    const typedUsername = String(deleteAllForm.typedUsername || '').trim();
+    const confirmationText = String(deleteAllForm.confirmationText || '').trim();
+    const expectedUsername = String(admin?.username || '').trim();
+
+    if (!typedUsername || !confirmationText) {
+      notify.warning('Missing Confirmation', 'Type both the admin username and the delete phrase first.');
+      return;
+    }
+
+    if (typedUsername.toLowerCase() !== expectedUsername.toLowerCase()) {
+      notify.error('Username Mismatch', 'The typed admin username does not match the logged-in admin.');
+      return;
+    }
+
+    if (confirmationText !== DELETE_ALL_BOOKS_CONFIRM_TEXT) {
+      notify.error('Wrong Phrase', `Type "${DELETE_ALL_BOOKS_CONFIRM_TEXT}" exactly to continue.`);
+      return;
+    }
+
+    setDeleteAllSubmitting(true);
+    setError('');
+    try {
+      const { data } = await deleteAllBooks({
+        typedUsername,
+        confirmationText,
+      });
+
+      setBooks([]);
+      if (editingId) resetForm();
+      setDeleteAllOpen(false);
+      resetDeleteAllForm();
+      await loadDeleteHistory();
+      notify.success('All Books Deleted', data?.message || 'All books were deleted successfully.');
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to delete all books';
+      setError(message);
+      notify.error('Bulk Delete Error', message);
+    } finally {
+      setDeleteAllSubmitting(false);
     }
   };
 
@@ -498,8 +618,37 @@ const AdminBook = () => {
 
           {/* Book Table */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100">
-              <h2 className="text-base font-semibold text-[#1a1a2e]">All Books</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-[#1a1a2e]">All Books</h2>
+                <p className="mt-1 text-xs text-slate-400">
+                  Showing {displayedBooks.length} of {filteredBooks.length} match{filteredBooks.length !== 1 ? 'es' : ''}
+                </p>
+              </div>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search books..."
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition-colors focus:border-[#1a1a2e] sm:w-64"
+                />
+                {filteredBooks.length > 10 ? (
+                  showAllBooks ? (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+                      Showing all books
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllBooks(true)}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 min-w-[140px]"
+                    >
+                      See All Books
+                    </button>
+                  )
+                ) : null}
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -521,15 +670,15 @@ const AdminBook = () => {
                         </td>
                       </tr>
                     ))
-                  ) : books.length === 0 ? (
+                  ) : filteredBooks.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-5 py-10 text-center text-slate-400">
                         <p className="text-3xl mb-2">📭</p>
-                        No books found. Add your first book above.
+                        {searchQuery.trim() ? 'No books match your search.' : 'No books found. Add your first book above.'}
                       </td>
                     </tr>
                   ) : (
-                    books.map((book) => (
+                    displayedBooks.map((book) => (
                       <tr
                         key={book._id}
                         className={`border-t border-slate-50 hover:bg-slate-50 transition-colors ${
@@ -603,8 +752,150 @@ const AdminBook = () => {
             </div>
           </div>
 
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
+            <section className="self-start rounded-xl border border-red-100 bg-red-50/80 p-4 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-red-500">
+                Danger Zone
+              </p>
+              <h2 className="mt-2 text-sm font-semibold text-[#1a1a2e]">Delete entire library</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Hidden below the main workflow on purpose. Use only for full reset.
+              </p>
+              <div className="mt-3 space-y-2 text-[11px] text-slate-500">
+                <p>Admin: <span className="font-semibold text-slate-700">{admin?.username || 'admin'}</span></p>
+                <p>Phrase: <span className="font-semibold text-red-600">{DELETE_ALL_BOOKS_CONFIRM_TEXT}</span></p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteAllOpen(true)}
+                disabled={loading || books.length === 0}
+                className="mt-4 w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Open Delete Flow
+              </button>
+            </section>
+
+            <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-[#1a1a2e]">Deletion Activity</h2>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Recent full-library delete actions.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {loadingDeleteHistory ? (
+                  [...Array(2)].map((_, i) => (
+                    <div key={i} className="h-20 rounded-xl bg-slate-100 animate-pulse" />
+                  ))
+                ) : deleteHistory.length === 0 ? (
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-400">
+                    No full-library deletion activity yet.
+                  </div>
+                ) : (
+                  deleteHistory.map((item) => (
+                    <div key={item.id} className="rounded-xl border border-slate-100 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-[#1a1a2e]">{item.title}</p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {item.adminUsername} | {formatDateTime(item.createdAt)}
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-red-100 bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-red-600">
+                          {item.level || 'critical'}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                        <p>
+                          Deleted: <span className="font-semibold text-slate-700">{item.metadata?.deletedCount || 0}</span>
+                        </p>
+                        <p>
+                          Admin: <span className="font-mono text-slate-700">{item.metadata?.typedUsername || '-'}</span>
+                        </p>
+                        <p className="sm:col-span-1">
+                          Phrase: <span className="font-mono text-slate-700">{item.metadata?.confirmationText || '-'}</span>
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+
         </div>
       </main>
+
+      {deleteAllOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-red-100 bg-white shadow-2xl">
+            <div className="border-b border-slate-100 px-6 py-5">
+              <h2 className="text-lg font-semibold text-[#1a1a2e]">Delete All Books</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                This permanently removes every book from the platform. To continue, type your admin username and the
+                final delete phrase below. Both typed values will be saved in activity history.
+              </p>
+            </div>
+
+            <div className="space-y-4 px-6 py-5">
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                Warning: this clears the whole library and related book records in one action.
+              </div>
+
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs font-medium text-slate-500">
+                  Type admin username: {admin?.username || 'admin'}
+                </span>
+                <input
+                  value={deleteAllForm.typedUsername}
+                  onChange={(e) => setDeleteAllForm((prev) => ({ ...prev, typedUsername: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition-colors focus:border-[#1a1a2e]"
+                  placeholder="Admin username"
+                  autoFocus
+                />
+              </label>
+
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs font-medium text-slate-500">
+                  Type phrase: {DELETE_ALL_BOOKS_CONFIRM_TEXT}
+                </span>
+                <input
+                  value={deleteAllForm.confirmationText}
+                  onChange={(e) => setDeleteAllForm((prev) => ({ ...prev, confirmationText: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition-colors focus:border-[#1a1a2e]"
+                  placeholder={DELETE_ALL_BOOKS_CONFIRM_TEXT}
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteAllOpen(false);
+                  resetDeleteAllForm();
+                }}
+                disabled={deleteAllSubmitting}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAllBooks}
+                disabled={deleteAllSubmitting || books.length === 0}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deleteAllSubmitting ? 'Deleting All Books...' : 'Confirm Delete All'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   HiArrowLeft,
@@ -26,6 +26,16 @@ import {
 import { getAvatarGradient } from "../utils/avatarColor";
 import API from "../services/api";
 import { useNotification } from "../context/Notification";
+
+const coverBaseUrl = String(API.defaults.baseURL || "").replace(/\/api\/?$/, "");
+
+function getCoverImageSrc(coverImage) {
+  if (!coverImage) return "";
+  if (coverImage.startsWith("data:")) return coverImage;
+  if (/^https?:\/\//i.test(coverImage)) return coverImage;
+  if (coverImage.startsWith("/")) return `${coverBaseUrl}${coverImage}`;
+  return coverImage;
+}
 
 
 
@@ -483,7 +493,7 @@ function PaymentsTab() {
                     <div className="w-10 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0">
                       {p.book?.coverImage ? (
                         <img
-                          src={`http://localhost:3000${p.book.coverImage}`}
+                          src={getCoverImageSrc(p.book.coverImage)}
                           alt={p.book.title || "Book cover"}
                           className="w-full h-full object-cover"
                         />
@@ -501,7 +511,11 @@ function PaymentsTab() {
 
                     {p.book?.id ? (
                       <button
-                        onClick={() => navigate(`/read/${p.book.id}`)}
+                        onClick={() =>
+                          navigate(`/read/${p.book.id}`, {
+                            state: { bookTitle: p.book?.title?.trim() || "Book Reader" },
+                          })
+                        }
                         className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
                       >
                         Read
@@ -793,7 +807,7 @@ function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState({ type: "", id: "" });
 
-  const load = async (nextFilter = filter, { silent = false } = {}) => {
+  const load = useCallback(async (nextFilter = filter, { silent = false } = {}) => {
     if (silent) setRefreshing(true);
     else setLoading(true);
 
@@ -819,26 +833,26 @@ function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
       if (silent) setRefreshing(false);
       else setLoading(false);
     }
-  };
+  }, [filter, notify, onUnreadCount]);
 
   useEffect(() => {
     load(filter, { silent: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, load]);
 
   useEffect(() => {
     const id = setInterval(() => load(filter, { silent: true }), 25000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, load]);
 
   const handleMarkRead = async (id) => {
     setBusy({ type: "read", id });
     try {
       await API.patch(`/notifications/${id}/read`);
-      setItems((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
-      );
+      setItems((prev) => (
+        filter === "unread"
+          ? prev.filter((n) => n.id !== id)
+          : prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
+      ));
       onUnreadCount?.(Math.max(0, Number(unreadCount) - 1));
     } catch (err) {
       notify.error("Failed", err.response?.data?.message ?? "Could not mark as read.");
@@ -851,7 +865,11 @@ function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
     setBusy({ type: "readAll", id: "all" });
     try {
       await API.patch("/notifications/read-all");
-      setItems((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+      setItems((prev) => (
+        filter === "unread"
+          ? []
+          : prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() }))
+      ));
       onUnreadCount?.(0);
       notify.success("Done", "All notifications marked as read.");
     } catch (err) {
@@ -865,8 +883,12 @@ function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
     if (!window.confirm("Delete this notification?")) return;
     setBusy({ type: "delete", id });
     try {
+      const deletedItem = items.find((n) => n.id === id);
       await API.delete(`/notifications/${id}`);
       setItems((prev) => prev.filter((n) => n.id !== id));
+      if (deletedItem && !deletedItem.readAt) {
+        onUnreadCount?.(Math.max(0, Number(unreadCount) - 1));
+      }
       notify.success("Deleted", "Notification removed.");
     } catch (err) {
       notify.error("Failed", err.response?.data?.message ?? "Could not delete notification.");
@@ -922,11 +944,11 @@ function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
             disabled={!hasUnread || busy.type === "readAll"}
             className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-semibold hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {busy.type === "readAll" ? "Markingâ€¦" : "Mark all read"}
+            {busy.type === "readAll" ? "Marking..." : "Mark all read"}
           </button>
 
           {refreshing ? (
-            <span className="text-[11px] text-gray-400">Refreshingâ€¦</span>
+            <span className="text-[11px] text-gray-400">Refreshing...</span>
           ) : null}
         </div>
       </div>
@@ -947,7 +969,7 @@ function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
         <div className="text-center py-10 text-gray-400">
           <HiOutlineBell className="text-4xl mx-auto mb-2 opacity-30" />
           <p className="text-sm font-medium">No notifications</p>
-          <p className="text-xs mt-1">Youâ€™ll see security and admin updates here.</p>
+          <p className="text-xs mt-1">You'll see security and admin updates here.</p>
           <button
             onClick={() => onGoToTab?.("security")}
             className="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -1003,7 +1025,7 @@ function NotificationsTab({ unreadCount, onUnreadCount, onGoToTab }) {
                         disabled={busy.type === "read" && busy.id === n.id}
                         className="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-semibold hover:bg-indigo-700 disabled:opacity-50"
                       >
-                        {busy.type === "read" && busy.id === n.id ? "â€¦" : "Mark read"}
+                        {busy.type === "read" && busy.id === n.id ? "..." : "Mark read"}
                       </button>
                     ) : null}
 
@@ -1153,7 +1175,14 @@ export default function ProfilePage() {
   const [form, setForm]       = useState({ name: "", email: "" });
   const [pwdForm, setPwdForm] = useState({ current: "", password: "", confirmPassword: "" });
 
-  const refreshUnreadCount = async (isActive = true, { toastOnIncrease = false } = {}) => {
+  const handleUnreadCountChange = useCallback((nextCount) => {
+    const safeCount = Math.max(0, Number(nextCount) || 0);
+    setUnreadCount(safeCount);
+    unreadCountRef.current = safeCount;
+    unreadInitRef.current = true;
+  }, []);
+
+  const refreshUnreadCount = useCallback(async (isActive = true, { toastOnIncrease = false } = {}) => {
     try {
       const { data } = await API.get("/notifications/unread-count");
       const next = Number(data?.unreadCount) || 0;
@@ -1164,13 +1193,11 @@ export default function ProfilePage() {
         notify.info("New notification", diff === 1 ? "You have 1 new notification." : `You have ${diff} new notifications.`);
       }
 
-      setUnreadCount(next);
-      unreadCountRef.current = next;
-      unreadInitRef.current = true;
+      handleUnreadCountChange(next);
     } catch {
       // ignore
     }
-  };
+  }, [handleUnreadCountChange, notify]);
 
   useEffect(() => {
     const normalized = normalizeTabKey(urlTab);
@@ -1178,14 +1205,14 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab]);
 
-  const handleSelectTab = (tabKey) => {
+  const handleSelectTab = useCallback((tabKey) => {
     const normalized = normalizeTabKey(tabKey);
     setActiveTab(normalized);
 
     const next = new URLSearchParams(searchParams);
     next.set("tab", normalized);
     setSearchParams(next);
-  };
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!localStorage.getItem("token")) { navigate("/auth/login"); return; }
@@ -1261,7 +1288,7 @@ export default function ProfilePage() {
       isActive = false;
       clearInterval(unreadInterval);
     };
-  }, [navigate]);
+  }, [navigate, refreshUnreadCount]);
 
   const handleSave = async () => {
     const name  = form.name.trim();
@@ -1370,7 +1397,7 @@ export default function ProfilePage() {
           {activeTab === "notifications" && (
             <NotificationsTab
               unreadCount={unreadCount}
-              onUnreadCount={setUnreadCount}
+              onUnreadCount={handleUnreadCountChange}
               onGoToTab={handleSelectTab}
             />
           )}

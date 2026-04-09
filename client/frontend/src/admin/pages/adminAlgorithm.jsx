@@ -12,7 +12,7 @@ import AdminNavbar from "../Components/adminNavbar";
 import { fetchAllBooks } from "../adminAPI";
 import { useNotification } from "../../context/Notification";
 
-const PUBLIC_API_BASE = "http://localhost:3000/api";
+const PUBLIC_API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:3000/api" : "/api");
 
 function Stars({ value = 0 }) {
   const rating = Math.max(0, Math.min(5, Number(value) || 0));
@@ -140,7 +140,7 @@ const AdminAlgorithm = () => {
     return { avg, total };
   }, [selectedBook]);
 
-  const loadRecs = async (bookId) => {
+  const loadRecs = useCallback(async (bookId) => {
     if (!bookId) return;
     setLoadingRecs(true);
     setError("");
@@ -158,13 +158,12 @@ const AdminAlgorithm = () => {
     } finally {
       setLoadingRecs(false);
     }
-  };
+  }, [notify]);
 
   useEffect(() => {
     if (!selectedId) return;
     loadRecs(selectedId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+  }, [selectedId, loadRecs]);
 
   return (
     <div className="h-screen bg-[#f5f6fa] flex overflow-hidden">

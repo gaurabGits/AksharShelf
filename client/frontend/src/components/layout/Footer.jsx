@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import SystemLogo from "../Logo/SystemLogo";
+import { getHomeSectionHref, HOME_SECTIONS } from "../../utils/homeSections";
 
 const LINKS = [
   { to: "/",       label: "Home"  },
+  { to: getHomeSectionHref(HOME_SECTIONS.freeBooks), label: "Free Books" },
   { to: "/books",  label: "Books" },
   { to: "/about",  label: "About" },
 ];

@@ -64,11 +64,7 @@ export const routes = [
   },
   {
     path: "/read/:id",
-    element: (
-      <ProtectedRoute>
-        <ReaderPage />
-      </ProtectedRoute>
-    ),
+    element: <ReaderPage />,
   },
   {
     path: "/purchase/:id",

@@ -82,6 +82,7 @@ function FannedBooks() {
   const fanOffset = viewportWidth < 640 ? 54 : viewportWidth < 768 ? 68 : viewportWidth < 1024 ? 84 : 100;
   const fanSpread = viewportWidth < 640 ? 10 : viewportWidth < 768 ? 14 : viewportWidth < 1024 ? 18 : 22;
   const fanLift = viewportWidth < 640 ? 18 : viewportWidth < 1024 ? 22 : 28;
+  const hoverEase = "cubic-bezier(0.16,1,0.3,1)";
 
   const FAN_IDLE = [
     { rotate: -14, x: -fanOffset, z: 10 },
@@ -96,7 +97,8 @@ function FannedBooks() {
       return {
         transform: `translateX(${base.x}px) rotate(${base.rotate}deg)`,
         zIndex: base.z,
-        transition: "transform 0.45s cubic-bezier(0.22,1,0.36,1)",
+        transition: `transform 0.62s ${hoverEase}`,
+        willChange: "transform",
       };
     }
 
@@ -104,7 +106,8 @@ function FannedBooks() {
       return {
         transform: `translateX(${base.x}px) rotate(0deg) translateY(-${fanLift}px) scale(1.08)`,
         zIndex: 60,
-        transition: "transform 0.35s cubic-bezier(0.22,1,0.36,1)",
+        transition: `transform 0.5s ${hoverEase}`,
+        willChange: "transform",
       };
     }
 
@@ -113,7 +116,8 @@ function FannedBooks() {
     return {
       transform: `translateX(${base.x + spread}px) rotate(${base.rotate + (i < hovered ? -5 : 5)}deg)`,
       zIndex: base.z,
-      transition: "transform 0.35s cubic-bezier(0.22,1,0.36,1)",
+      transition: `transform 0.5s ${hoverEase}`,
+      willChange: "transform",
     };
   };
 
@@ -143,7 +147,7 @@ function FannedBooks() {
                           sm:h-60 sm:w-36 md:h-64 md:w-40 lg:h-72 lg:w-44
                           overflow-hidden bg-gradient-to-br ${book.gradient}
                           select-none cursor-pointer
-                          transition-shadow duration-300 hover:shadow-[0_35px_70px_-10px_rgba(0,0,0,0.5)]`}
+                          transition-shadow duration-500 ease-out hover:shadow-[0_35px_70px_-10px_rgba(0,0,0,0.5)]`}
             >
               {book.coverImage ? (
                 <img
@@ -164,19 +168,28 @@ function FannedBooks() {
               {/* Gloss */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/30 via-white/8 to-transparent pointer-events-none" />
 
-              <div className="absolute right-2.5 top-2.5 z-10 rounded-full bg-black/45 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm sm:right-3 sm:top-3 sm:px-2.5 sm:text-[11px]">
-                #{book.rank ?? i + 1}
+              <div className="absolute right-2.5 top-2.5 z-10 rounded-full border border-white/70 bg-white/85 px-2 py-1 text-[10px] font-semibold text-slate-700 shadow-[0_8px_20px_-12px_rgba(15,23,42,0.45)] backdrop-blur-sm sm:right-3 sm:top-3 sm:px-2.5 sm:text-[11px]">
+                {book.rank ?? i + 1}
               </div>
 
               <div
-                className="absolute inset-x-0 bottom-4 z-10 flex justify-center"
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black/65 via-black/18 to-transparent"
                 style={{
                   opacity: hovered === i ? 1 : 0,
-                  transform: hovered === i ? "translateY(0)" : "translateY(8px)",
-                  transition: "opacity 0.25s ease, transform 0.25s ease",
+                  transform: hovered === i ? "translateY(0)" : "translateY(18px)",
+                  transition: `opacity 0.45s ${hoverEase}, transform 0.55s ${hoverEase}`,
+                }}
+              />
+
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center"
+                style={{
+                  opacity: hovered === i ? 1 : 0,
+                  transform: hovered === i ? "translateY(0)" : "translateY(18px)",
+                  transition: `opacity 0.42s ${hoverEase}, transform 0.58s ${hoverEase}`,
                 }}
               >
-                <span className="rounded-full bg-white/92 px-3 py-1.5 text-[10px] font-semibold text-gray-900 shadow-sm sm:text-[11px]">
+                <span className="text-[10px] font-thin tracking-[0.18em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)] sm:text-[11px]">
                   See more
                 </span>
               </div>

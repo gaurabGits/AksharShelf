@@ -8,8 +8,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Iowan Old Style"', '"Palatino Linotype"', '"Book Antiqua"', "Georgia", "serif"],
-        ui: ['"Aptos"', '"Segoe UI"', "Tahoma", "sans-serif"],
+        sans: ['"Inter"', '"Aptos"', '"Segoe UI"', "Tahoma", "sans-serif"],
+        serif: ['"Inter"', '"Aptos"', '"Segoe UI"', "Tahoma", "sans-serif"],
+        display: ['"Inter"', '"Aptos"', '"Segoe UI"', "Tahoma", "sans-serif"],
+        ui: ['"Inter"', '"Aptos"', '"Segoe UI"', "Tahoma", "sans-serif"],
       },
     },
   },

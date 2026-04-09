@@ -11,6 +11,8 @@ const {
   addBook,
   editBook,
   deleteBook,
+  deleteAllBooks,
+  getBookDeletionHistory,
   getAllReviews,
   deleteReview,
   getPaymentOrders,
@@ -38,6 +40,8 @@ router.put("/users/:id/block", adminAuth, toggleBlockUser);
 // Book management
 router.get("/books", adminAuth, getAllBooks);
 router.post("/books", adminAuth, addBook);
+router.get("/books/deletion-history", adminAuth, getBookDeletionHistory);
+router.delete("/books/bulk-delete", adminAuth, deleteAllBooks);
 router.put("/books/:id", adminAuth, editBook);
 router.delete("/books/:id", adminAuth, deleteBook);
 
