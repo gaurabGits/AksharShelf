@@ -47,23 +47,15 @@ cd client/frontend
 npm install
 ```
 
-2. **Configure backend** - Create `server/.env`:
-```env
-PORT=3000
-MONGO_URL=mongodb://127.0.0.1:27017/ebookdb
-JWT_SECRET=your_strong_secret_here
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
-```
 
-3. **Start MongoDB:**
+2. **Start MongoDB:**
 ```bash
 mongod
 # or
 sudo systemctl start mongod
 ```
 
-4. **Run the application:**
+3. **Run the application:**
 ```bash
 # Backend (from server/)
 npm run dev
@@ -72,7 +64,7 @@ npm run dev
 npm run dev
 ```
 
-5. **Access:**
+4. **Access:**
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3000/api
 - Admin Login: http://localhost:5173/admin/login (admin/admin123)
