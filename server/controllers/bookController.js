@@ -26,24 +26,52 @@ const markActivityOnce = async ({ userId, bookId, field }) => {
   }
 };
 
-const attachBookmarkFlag = async (books, userId) => {
+const attachUserBookFlags = async (books, userId) => {
   const normalized = books.map((book) => (typeof book.toObject === "function" ? book.toObject() : book));
 
   if (!userId || normalized.length === 0) {
-    return normalized.map((book) => ({ ...book, isBookmarked: false }));
+    return normalized.map((book) => ({
+      ...book,
+      isBookmarked: Boolean(book.isBookmarked),
+      shelfStatus: book.shelfStatus ?? null,
+      totalReadSeconds: book.totalReadSeconds ?? 0,
+      lastReadPage: book.lastReadPage ?? 1,
+      lastReadAt: book.lastReadAt ?? null,
+    }));
   }
 
   const bookIds = normalized.map((book) => book._id);
-  const bookmarks = await Bookmark.find({
-    user: userId,
-    book: { $in: bookIds },
-  }).select("book");
+  const [bookmarks, shelfEntries] = await Promise.all([
+    Bookmark.find({
+      user: userId,
+      book: { $in: bookIds },
+    }).select("book"),
+    Bookshelf.find({
+      user: userId,
+      book: { $in: bookIds },
+    }).select("book status totalReadSeconds lastReadPage lastReadAt"),
+  ]);
 
   const bookmarkedIds = new Set(bookmarks.map((item) => String(item.book)));
+  const shelfDataByBookId = new Map(
+    shelfEntries.map((item) => [
+      String(item.book),
+      {
+        status: item.status,
+        totalReadSeconds: item.totalReadSeconds ?? 0,
+        lastReadPage: item.lastReadPage ?? 1,
+        lastReadAt: item.lastReadAt ?? null,
+      },
+    ])
+  );
 
   return normalized.map((book) => ({
     ...book,
     isBookmarked: bookmarkedIds.has(String(book._id)),
+    shelfStatus: shelfDataByBookId.get(String(book._id))?.status ?? book.shelfStatus ?? null,
+    totalReadSeconds: shelfDataByBookId.get(String(book._id))?.totalReadSeconds ?? book.totalReadSeconds ?? 0,
+    lastReadPage: shelfDataByBookId.get(String(book._id))?.lastReadPage ?? book.lastReadPage ?? 1,
+    lastReadAt: shelfDataByBookId.get(String(book._id))?.lastReadAt ?? book.lastReadAt ?? null,
   }));
 };
 
@@ -167,6 +195,9 @@ const getBookById = async (req, res) => {
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     }
+    const userId = req.user?.id ?? null;
+
+    await markActivityOnce({ userId, bookId: book._id, field: "viewedAt" });
 
     let canRead = !book.isPaid;
 
@@ -177,7 +208,7 @@ const getBookById = async (req, res) => {
       } else {
         const now = new Date();
         const purchase = await Purchase.findOne({
-          user: req.user.id,
+          user: userId,
           book: book._id,
           $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }],
         });
@@ -186,20 +217,26 @@ const getBookById = async (req, res) => {
     }
 
     let isBookmarked = false;
-    if (req.user?.id) {
+    if (userId) {
       isBookmarked = !!(await Bookmark.findOne({
-        user: req.user.id,
+        user: userId,
         book: book._id,
       }).select("_id"));
     }
 
     let shelfStatus = null;
-    if (req.user?.id) {
+    let totalReadSeconds = 0;
+    let lastReadPage = 1;
+    let lastReadAt = null;
+    if (userId) {
       const shelfEntry = await Bookshelf.findOne({
-        user: req.user.id,
+        user: userId,
         book: book._id,
-      }).select("status");
+      }).select("status totalReadSeconds lastReadPage lastReadAt");
       shelfStatus = shelfEntry?.status ?? null;
+      totalReadSeconds = shelfEntry?.totalReadSeconds ?? 0;
+      lastReadPage = shelfEntry?.lastReadPage ?? 1;
+      lastReadAt = shelfEntry?.lastReadAt ?? null;
     }
 
     const access = { canRead };
@@ -209,6 +246,9 @@ const getBookById = async (req, res) => {
       ...bookObject,
       isBookmarked,
       shelfStatus,
+      totalReadSeconds,
+      lastReadPage,
+      lastReadAt,
     };
 
     res.json({ book: normalizedBook, access });
@@ -262,7 +302,7 @@ const getAllBooks = async (req, res) => {
     }
 
     const books = await booksQuery;
-    const booksWithBookmark = await attachBookmarkFlag(books, req.user?.id);
+    const booksWithBookmark = await attachUserBookFlags(books, req.user?.id);
 
     res.json({
       total,
@@ -291,9 +331,11 @@ const getBookmarkedBooks = async (req, res) => {
         bookmarkedAt: item.createdAt,
       }));
 
+    const booksWithFlags = await attachUserBookFlags(books, req.user?.id);
+
     return res.json({
-      total: books.length,
-      books,
+      total: booksWithFlags.length,
+      books: booksWithFlags,
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -334,7 +376,7 @@ const getPopularBooks = async (req, res) => {
       .sort({ reads: -1, createdAt: -1 })
       .limit(limit);
 
-    const booksWithBookmark = await attachBookmarkFlag(books, req.user?.id);
+    const booksWithBookmark = await attachUserBookFlags(books, req.user?.id);
 
     return res.json({
       total: booksWithBookmark.length,
@@ -350,6 +392,7 @@ const getBookRecommendations = async (req, res) => {
     const bookId = req.params.id;
     const rawLimit = Number(req.query.limit);
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 20) : 10;
+    const excludeBookId = String(req.query.excludeBookId || "").trim();
 
     const target = await Book.findById(bookId).lean();
     if (!target) {
@@ -362,6 +405,7 @@ const getBookRecommendations = async (req, res) => {
         if (!item?._id) continue;
         const key = String(item._id);
         if (key === String(bookId)) continue;
+        if (excludeBookId && key === excludeBookId) continue;
         if (!candidates.has(key)) candidates.set(key, item);
       }
     };
@@ -385,11 +429,13 @@ const getBookRecommendations = async (req, res) => {
     const scored = [];
     for (const candidate of candidates.values()) {
       const sim = computeContentBasedSimilarity(target, candidate);
+      const matchPercent = Math.max(0, Math.min(100, Math.round((Number(sim.score) || 0) * 100)));
       scored.push({
         ...candidate,
         recommendation: {
           algorithm: "content_based",
           score: sim.score,
+          matchPercent,
           reasons: sim.reasons,
         },
       });
@@ -403,7 +449,7 @@ const getBookRecommendations = async (req, res) => {
     });
 
     const top = scored.slice(0, limit);
-    const topWithBookmarks = await attachBookmarkFlag(top, req.user?.id);
+    const topWithBookmarks = await attachUserBookFlags(top, req.user?.id);
 
     return res.json({
       algorithm: "content_based",
@@ -454,28 +500,13 @@ const getBookCollaborativeRecommendations = async (req, res) => {
           recommendation: {
             algorithm: "collaborative",
             score: Number.isFinite(stat?.score) ? stat.score : 0,
-            reasons,
+            reasons: reasons.length > 0 ? reasons : ["Readers also viewed"],
           },
         };
       });
-    } else {
-      const fallback = await Book.find({ _id: { $ne: bookId } })
-        .select(baseProjection)
-        .sort({ reads: -1, createdAt: -1 })
-        .limit(limit)
-        .lean();
-
-      orderedBooks = fallback.map((book) => ({
-        ...book,
-        recommendation: {
-          algorithm: "collaborative",
-          score: 0,
-          reasons: ["Popular right now"],
-        },
-      }));
     }
 
-    const booksWithBookmarks = await attachBookmarkFlag(orderedBooks, req.user?.id);
+    const booksWithBookmarks = await attachUserBookFlags(orderedBooks, req.user?.id);
 
     return res.json({
       algorithm: "collaborative",

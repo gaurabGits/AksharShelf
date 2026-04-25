@@ -4,11 +4,11 @@ import { Document, Page, pdfjs } from "react-pdf";
 import {
   FiArrowLeft, FiChevronLeft, FiChevronRight, FiColumns,
   FiFileText, FiGrid, FiRotateCcw, FiMinus, FiPlus,
-  FiSearch, FiX, FiBookmark, FiSliders, FiClock, FiEye,
+  FiSearch, FiX, FiBookmark, FiClock,
   FiMaximize2, FiTrash2,
 } from "react-icons/fi";
 import { RiFocusMode } from "react-icons/ri";
-import { fetchBookDetail } from "../services/bookService";
+import { fetchBookDetail, persistReadingProgress } from "../services/bookService";
 import APIClient from "../services/api.jsx";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
@@ -22,6 +22,9 @@ const FALLBACK_ASP = 1 / 1.414;
 const GUTTER       = 12;
 const PAGE_GAP     = 20;
 const V_PAD        = 24;
+const SELECTION_DEBOUNCE_MS = 180;
+const MIN_SELECTION_CHARS   = 2;
+const READING_PROGRESS_FLUSH_MS = 20000;
 
 const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const clamp    = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -85,6 +88,11 @@ function mergeRectsIntoLines(clientRects, pageRect) {
   }));
 }
 
+function getSelectionPageSurface(node) {
+  const el = node?.nodeType === 1 ? node : node?.parentElement;
+  return el?.closest?.("[data-page-surface]") || null;
+}
+
 function topBtn(active = false) {
   return [
     "inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm font-medium transition-all",
@@ -113,7 +121,6 @@ export default function ReaderPage() {
   const debSearchRef      = useRef(null);
   const touchRef          = useRef(null);
   const panRef            = useRef({ active: false, startX: 0, startY: 0, sl: 0, st: 0, didMove: false });
-  const sessionStart      = useRef(Date.now());
   const dragHintTimer     = useRef(null);
   const transitionTimer   = useRef(null);
   const activeKeyRef      = useRef("");
@@ -124,6 +131,9 @@ export default function ReaderPage() {
   const prevQueryRef      = useRef("");
   const selectionTimerRef = useRef(null);
   const isSelectingRef    = useRef(false);
+  const currentPageRef    = useRef(1);
+  const pendingReadSecondsRef = useRef(0);
+  const isFlushingReadProgressRef = useRef(false);
 
   /* FIX 1 — stash the page we want to jump to in single mode */
   const pendingSingleScrollRef = useRef(null);
@@ -143,12 +153,12 @@ export default function ReaderPage() {
   const [vpH,             setVpH]             = useState(0);
   const [bookError,       setBookError]       = useState("");
   const [accessChecked,   setAccessChecked]   = useState(false);
+  const [serverLastReadPage, setServerLastReadPage] = useState(1);
 
   /* panels */
   const [sidebarOpen,   setSidebarOpen]   = useState(false);
   const [hlSidebarOpen, setHlSidebarOpen] = useState(false);
   const [searchOpen,    setSearchOpen]    = useState(false);
-  const [showSettings,  setShowSettings]  = useState(false);
   const [showGoTo,      setShowGoTo]      = useState(false);
   const [goToInput,     setGoToInput]     = useState("");
 
@@ -158,9 +168,6 @@ export default function ReaderPage() {
   const [searchIdx,     setSearchIdx]     = useState(0);
   const [searching,     setSearching]     = useState(false);
 
-  /* settings */
-  const [brightness,   setBrightness]   = useState(100);
-  const [bgColor,      setBgColor]      = useState("dark");
   const [focusMode,    setFocusMode]    = useState(false);
   const [isDragging,   setIsDragging]   = useState(false);
   const [showDragHint, setShowDragHint] = useState(false);
@@ -253,6 +260,7 @@ export default function ReaderPage() {
 
   useEffect(() => { localStorage.setItem(highlightsKey, JSON.stringify(highlights)); }, [highlights, highlightsKey]);
   useEffect(() => { localStorage.setItem(viewModeKey, doublePage ? "double" : "single"); }, [doublePage, viewModeKey]);
+  useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
 
   useEffect(() => {
     try {
@@ -269,6 +277,48 @@ export default function ReaderPage() {
      until the [data-page] element exists in the DOM and scrolls it
      into view. pendingSingleScrollRef is cleared on success.
   ════════════════════════════════════════════════════════════ */
+  const flushReadingProgress = useCallback(async ({ useKeepalive = false } = {}) => {
+    if (!token || isFlushingReadProgressRef.current) return;
+
+    const secondsSpent = pendingReadSecondsRef.current;
+    if (secondsSpent <= 0) return;
+
+    const payload = {
+      bookId: id,
+      secondsSpent,
+      lastReadPage: Math.max(1, currentPageRef.current || 1),
+    };
+
+    pendingReadSecondsRef.current = 0;
+
+    if (useKeepalive && typeof window !== "undefined" && typeof window.fetch === "function") {
+      try {
+        window.fetch(`${API_BASE}/bookshelf/progress`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(() => {});
+        return;
+      } catch {
+        pendingReadSecondsRef.current += secondsSpent;
+        return;
+      }
+    }
+
+    isFlushingReadProgressRef.current = true;
+    try {
+      await persistReadingProgress(payload);
+    } catch {
+      pendingReadSecondsRef.current += secondsSpent;
+    } finally {
+      isFlushingReadProgressRef.current = false;
+    }
+  }, [id, token]);
+
   const scrollSingleToPage = useCallback((pageNum, retries = 10) => {
     const container = singleViewRef.current;
     if (!container) {
@@ -329,8 +379,10 @@ export default function ReaderPage() {
         const nextTitle = data?.book?.title?.trim() || data?.title?.trim() || "Book Reader";
         const canRead = Boolean(data?.access?.canRead);
         const isPaid = Boolean(data?.book?.isPaid);
+        const nextLastReadPage = Math.max(1, Math.floor(Number(data?.book?.lastReadPage) || 1));
 
         setBookTitle(nextTitle);
+        setServerLastReadPage(nextLastReadPage);
         setAccessChecked(true);
 
         if (!canRead) {
@@ -365,9 +417,33 @@ export default function ReaderPage() {
   }, [bmsKey]);
 
   useEffect(() => {
-    const t = setInterval(() => setElapsed(Math.floor((Date.now() - sessionStart.current) / 1000)), 1000);
+    const t = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      pendingReadSecondsRef.current += 1;
+      setElapsed((prev) => prev + 1);
+    }, 1000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const t = setInterval(() => { void flushReadingProgress(); }, READING_PROGRESS_FLUSH_MS);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") void flushReadingProgress({ useKeepalive: true });
+    };
+    const onPageHide = () => { void flushReadingProgress({ useKeepalive: true }); };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+      clearInterval(t);
+      void flushReadingProgress();
+    };
+  }, [flushReadingProgress, token]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -387,13 +463,18 @@ export default function ReaderPage() {
     setNumPages(pdf.numPages);
     setBookError("");
     pdf.getPage(1).then((pg) => { const vp = pg.getViewport({ scale: 1 }); setPdfAsp(vp.width / vp.height); }).catch(() => {});
-    const saved = parseInt(localStorage.getItem(progressKey), 10);
-    if (saved >= 1 && saved <= pdf.numPages) setCurrentPage(saved);
+    const localSaved = parseInt(localStorage.getItem(progressKey), 10);
+    const nextPage = localSaved >= 1 && localSaved <= pdf.numPages
+      ? localSaved
+      : serverLastReadPage >= 1 && serverLastReadPage <= pdf.numPages
+        ? serverLastReadPage
+        : null;
+    if (nextPage) setCurrentPage(nextPage);
     // If a mode-switch scroll is pending, retry now that the PDF is ready
     if (!doublePage && pendingSingleScrollRef.current) {
       setTimeout(() => scrollSingleToPage(pendingSingleScrollRef.current), 80);
     }
-  }, [progressKey, doublePage, scrollSingleToPage]);
+  }, [progressKey, doublePage, scrollSingleToPage, serverLastReadPage]);
 
   const onLoadError = useCallback((err) => { console.error(err); setBookError("Failed to load this PDF."); }, []);
 
@@ -481,12 +562,18 @@ export default function ReaderPage() {
         if (!isSelectingRef.current) setHlToolbar(null);
         return;
       }
-      const text = sel.toString().trim();
+      const text = sel.toString().replace(/\s+/g, " ").trim();
       if (!text) return;
 
       const range  = sel.getRangeAt(0);
-      const cont   = range.commonAncestorContainer;
-      const pageEl = (cont.nodeType === 1 ? cont : cont.parentElement)?.closest?.("[data-page]");
+      const startPageEl = getSelectionPageSurface(range.startContainer);
+      const endPageEl   = getSelectionPageSurface(range.endContainer);
+      if (!startPageEl || startPageEl !== endPageEl) {
+        if (!isSelectingRef.current) setHlToolbar(null);
+        return;
+      }
+
+      const pageEl = startPageEl;
       if (!pageEl) return;
 
       const pageNum  = parseInt(pageEl.dataset.page, 10);
@@ -494,28 +581,33 @@ export default function ReaderPage() {
 
       const pageRect = pageEl.getBoundingClientRect();
       const rawRects = Array.from(range.getClientRects());
+      if (!rawRects.length || (text.length < MIN_SELECTION_CHARS && rawRects.length === 1)) {
+        if (!isSelectingRef.current) setHlToolbar(null);
+        return;
+      }
 
       // Merge fragmented per-span rects into one rect per visual line
       const rects = mergeRectsIntoLines(rawRects, pageRect);
       if (!rects.length) return;
 
-      // Position toolbar above the topmost raw rect
-      const topRect = rawRects.reduce((a, b) => (b.top < a.top ? b : a), rawRects[0]);
+      const selectionBounds = range.getBoundingClientRect();
+      const toolbarWidth = 264;
+      const toolbarHeight = 52;
+      const placeBelow = selectionBounds.top < toolbarHeight + 20;
       setHlToolbar({
         text, rects, page: pageNum,
-        top:  Math.max(8, topRect.top - 56),
-        left: clamp(topRect.left + topRect.width / 2 - 128, 8, window.innerWidth - 264),
+        top: placeBelow
+          ? Math.min(window.innerHeight - toolbarHeight - 8, selectionBounds.bottom + 12)
+          : Math.max(8, selectionBounds.top - toolbarHeight - 12),
+        left: clamp(
+          selectionBounds.left + selectionBounds.width / 2 - toolbarWidth / 2,
+          8,
+          window.innerWidth - toolbarWidth - 8
+        ),
+        placeBelow,
       });
-    }, 120);
+    }, SELECTION_DEBOUNCE_MS);
   }, []);
-
-  useEffect(() => {
-    const onMouseDown = () => { isSelectingRef.current = true; };
-    const onMouseUp   = () => { setTimeout(() => { isSelectingRef.current = false; }, 200); handleTextSelection(); };
-    document.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("mouseup",   onMouseUp);
-    return () => { document.removeEventListener("mousedown", onMouseDown); document.removeEventListener("mouseup", onMouseUp); clearTimeout(selectionTimerRef.current); };
-  }, [handleTextSelection]);
 
   useEffect(() => {
     const onDown = (e) => {
@@ -540,6 +632,40 @@ export default function ReaderPage() {
   }, [hlToolbar]);
 
   const removeHighlight = useCallback((hlId) => { setHighlights((prev) => prev.filter((h) => h.id !== hlId)); }, []);
+  const suppressReaderContextMenu = useCallback((e) => {
+    if (e.target?.closest?.("[data-page-surface], .react-pdf__Page__textContent")) e.preventDefault();
+  }, []);
+  const selectionBelongsToReader = useCallback((sel) => {
+    if (!sel || sel.rangeCount === 0) return false;
+    return !!(getSelectionPageSurface(sel.anchorNode) && getSelectionPageSurface(sel.focusNode));
+  }, []);
+
+  useEffect(() => {
+    const onMouseDown = () => { isSelectingRef.current = true; };
+    const onMouseUp   = () => { setTimeout(() => { isSelectingRef.current = false; }, 200); handleTextSelection(); };
+    const onTouchStart = () => { isSelectingRef.current = true; };
+    const onTouchEnd   = () => { setTimeout(() => { isSelectingRef.current = false; }, 220); handleTextSelection(); };
+    const onSelectionChange = () => {
+      const sel = window.getSelection();
+      if (!selectionBelongsToReader(sel)) return;
+      handleTextSelection();
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("mouseup",   onMouseUp);
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    document.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchEnd);
+      document.removeEventListener("selectionchange", onSelectionChange);
+      clearTimeout(selectionTimerRef.current);
+    };
+  }, [handleTextSelection, selectionBelongsToReader]);
 
   /* PAN */
   const onPointerDown = useCallback((e) => {
@@ -645,7 +771,6 @@ export default function ReaderPage() {
     const onKey = (e) => {
       const inInput = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
       if (e.key === "Escape") {
-        if (showSettings) { setShowSettings(false); return; }
         if (showGoTo)     { setShowGoTo(false); return; }
         if (searchOpen)   { setSearchOpen(false); clearSearch(); return; }
         if (focusMode)    { setFocusMode(false); return; }
@@ -668,7 +793,7 @@ export default function ReaderPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showSettings, showGoTo, searchOpen, focusMode, id, navigate, goToPrev, goToNext, getScrollState, scrollBy, doublePage, activeRef, toggleBookmark]);
+  }, [showGoTo, searchOpen, focusMode, id, navigate, goToPrev, goToNext, getScrollState, scrollBy, doublePage, activeRef, toggleBookmark]);
 
   /* SEARCH */
   const runSearch = useCallback(async (query, isNewQuery = true) => {
@@ -741,30 +866,38 @@ export default function ReaderPage() {
   }, [goToInput, goToPage]);
 
   const fmtTime    = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const bgCls      = bgColor === "sepia" ? "bg-[#f0e6d3] text-stone-900" : bgColor === "light" ? "bg-[#e8e8e8] text-gray-900" : "bg-[#0d0d0d] text-white";
-  const pageShadow = bgColor === "dark" ? "0 4px 40px rgba(0,0,0,0.7)" : "0 4px 28px rgba(0,0,0,0.15)";
-  const hlBlend    = bgColor === "dark" ? "screen" : "multiply";
+  const bgCls      = "bg-[#0d0d0d] text-white";
+  const pageShadow = "0 4px 40px rgba(0,0,0,0.7)";
+  const hlBlend    = "screen";
 
   /* Highlight overlay — one merged rect per line, zIndex above text layer */
   const HighlightLayer = ({ pageNum }) => {
     const ph = highlights.filter((h) => h.page === pageNum);
-    if (!ph.length) return null;
+    const preview = hlToolbar?.page === pageNum
+      ? [{ id: "selection-preview", rects: hlToolbar.rects, colorIdx: activeColorIdx, preview: true }]
+      : [];
+    const overlayItems = [...ph, ...preview];
+    if (!overlayItems.length) return null;
     return (
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 10, overflow: "hidden" }}>
-        {ph.map((hl) => {
+        {overlayItems.map((hl) => {
           const c = HIGHLIGHT_COLORS[hl.colorIdx ?? 0];
+          const previewBg = c.bg.replace(/0\.\d+\)/, "0.72)");
           return hl.rects.map((r, ri) => (
             <div key={`${hl.id}-${ri}`}
               style={{
                 position: "absolute",
                 left: `${r.left}%`, top: `${r.top}%`,
                 width: `${r.width}%`, height: `${r.height}%`,
-                background: c.bg, borderBottom: `2.5px solid ${c.border}`,
+                background: hl.preview ? previewBg : c.bg,
+                borderBottom: `2.5px solid ${c.border}`,
                 borderRadius: 2, mixBlendMode: hlBlend,
-                pointerEvents: "auto", cursor: "pointer",
+                boxShadow: hl.preview ? `0 0 0 1px ${c.border} inset` : "none",
+                pointerEvents: hl.preview ? "none" : "auto",
+                cursor: hl.preview ? "default" : "pointer",
               }}
               title="Click to remove highlight"
-              onClick={() => removeHighlight(hl.id)}
+              onClick={hl.preview ? undefined : () => removeHighlight(hl.id)}
             />
           ));
         })}
@@ -868,22 +1001,35 @@ export default function ReaderPage() {
   /* ════════════════════════════════════ RENDER ════════════════════════════════════ */
   return (
     <div className={`relative w-full h-screen flex flex-col overflow-hidden ${bgCls}`}
-      style={{ filter: `brightness(${brightness}%)`, fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
       <style>{`
         .react-pdf__Page__textContent {
           position: absolute !important; inset: 0 !important;
           overflow: hidden !important; line-height: 1 !important;
           text-size-adjust: none !important; z-index: 2 !important;
+          -webkit-touch-callout: none !important;
         }
         .react-pdf__Page__textContent span {
           position: absolute !important; white-space: pre !important;
           transform-origin: 0% 0% !important; cursor: text !important;
           user-select: text !important; -webkit-user-select: text !important;
           color: transparent !important;
+          -webkit-user-drag: none !important;
+          -webkit-touch-callout: none !important;
         }
-        /* Suppress browser native selection highlight so our overlay is the only visible one */
-        .react-pdf__Page__textContent span::selection      { background: transparent !important; color: transparent !important; }
-        .react-pdf__Page__textContent span::-moz-selection { background: transparent !important; color: transparent !important; }
+        [data-page-surface] {
+          -webkit-touch-callout: none !important;
+          -webkit-tap-highlight-color: transparent !important;
+        }
+        .react-pdf__Page__textContent span::selection {
+          background: rgba(99,102,241,0.35) !important;
+          color: rgba(15,23,42,0.95) !important;
+          -webkit-text-fill-color: rgba(15,23,42,0.95) !important;
+        }
+        .react-pdf__Page__textContent span::-moz-selection {
+          background: rgba(99,102,241,0.35) !important;
+          color: rgba(15,23,42,0.95) !important;
+        }
 
         .react-pdf__Page__canvas { display: block !important; user-select: none !important; pointer-events: none !important; position: relative; z-index: 1 !important; }
 
@@ -898,7 +1044,7 @@ export default function ReaderPage() {
           box-shadow: 0 0 0 3px rgba(249,115,22,0.3), 0 2px 10px rgba(249,115,22,0.4) !important;
           z-index: 4; position: relative;
         }
-        ::selection { background: rgba(99,102,241,0.35); }
+        ::selection { background: rgba(99,102,241,0.35); color: rgba(15,23,42,0.95); }
         .scrollbar-none::-webkit-scrollbar { display: none; }
         .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
         .hl-swatch { border-radius: 50%; transition: transform 0.12s, box-shadow 0.12s, outline 0.1s; }
@@ -910,7 +1056,9 @@ export default function ReaderPage() {
       {hlToolbar && (
         <div ref={hlToolbarRef}
           style={{ position: "fixed", top: hlToolbar.top, left: hlToolbar.left, zIndex: 9999, display: "flex", alignItems: "center", gap: 8, background: "rgba(12,12,12,0.97)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "8px 14px", boxShadow: "0 12px 40px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.4)", backdropFilter: "blur(18px)" }}>
-          <div style={{ position: "absolute", bottom: -7, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderTop: "7px solid rgba(12,12,12,0.97)" }} />
+          <div style={hlToolbar.placeBelow
+            ? { position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderBottom: "7px solid rgba(12,12,12,0.97)" }
+            : { position: "absolute", bottom: -7, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderTop: "7px solid rgba(12,12,12,0.97)" }} />
           <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase", userSelect: "none" }}>Highlight</span>
           <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
             {HIGHLIGHT_COLORS.map((c, ci) => (
@@ -921,37 +1069,6 @@ export default function ReaderPage() {
           <div style={{ width: 1, height: 16, background: "rgba(255,255,255,0.1)" }} />
           <button type="button" onClick={() => { setHlToolbar(null); window.getSelection()?.removeAllRanges(); }}
             style={{ color: "rgba(255,255,255,0.3)", fontSize: 14, cursor: "pointer", background: "none", border: "none", padding: "0 1px", lineHeight: 1, display: "flex", alignItems: "center" }}>✕</button>
-        </div>
-      )}
-
-      {/* Settings */}
-      {showSettings && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm" onClick={() => setShowSettings(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-[#111] border border-white/12 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-bold flex items-center gap-2"><FiSliders /> Settings</h2>
-              <button type="button" onClick={() => setShowSettings(false)} className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition"><FiX /></button>
-            </div>
-            <div className="space-y-5">
-              <div>
-                <label className="flex items-center gap-2 text-xs font-semibold text-white/55 uppercase tracking-widest mb-2"><FiEye className="w-3.5 h-3.5" /> Brightness</label>
-                <div className="flex items-center gap-3">
-                  <input type="range" min="40" max="150" value={brightness} onChange={(e) => setBrightness(+e.target.value)} className="flex-1 accent-indigo-400" />
-                  <span className="text-xs text-white/55 w-9 text-right">{brightness}%</span>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-white/55 uppercase tracking-widest mb-2">Background</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[["dark","Dark","bg-[#111] text-white"],["sepia","Sepia","bg-[#f0e6d3] text-stone-800"],["light","Light","bg-[#e8e8e8] text-gray-800"]].map(([k,l,c]) => (
-                    <button key={k} type="button" onClick={() => setBgColor(k)}
-                      className={`py-2 rounded-xl text-sm font-semibold border-2 transition ${c} ${bgColor===k?"border-indigo-400":"border-transparent opacity-55 hover:opacity-90"}`}>{l}</button>
-                  ))}
-                </div>
-              </div>
-              <button type="button" onClick={() => setShowSettings(false)} className="w-full py-2.5 rounded-xl bg-white text-black font-semibold text-sm hover:bg-white/90 transition">Done</button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -984,7 +1101,6 @@ export default function ReaderPage() {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button type="button" onClick={toggleBookmark} className={topBtn(isBookmarked)} title="Bookmark (Ctrl+B)"><FiBookmark /></button>
-                <button type="button" onClick={() => setShowSettings(true)} className={topBtn(showSettings)} title="Settings"><FiSliders /></button>
                 <button type="button" onClick={() => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 30); }} className={topBtn(false)} title="Search (Ctrl+F)"><FiSearch /></button>
               </div>
             </div>
@@ -1091,14 +1207,14 @@ export default function ReaderPage() {
           ) : (
             <>
               {!doublePage && (
-                <div ref={singleViewRef} className="absolute inset-0 scrollbar-none overflow-y-auto overflow-x-hidden" style={{ touchAction: "auto" }}>
+                <div ref={singleViewRef} className="absolute inset-0 scrollbar-none overflow-y-auto overflow-x-hidden" onContextMenuCapture={suppressReaderContextMenu} style={{ touchAction: "auto" }}>
                   <Document file={file} options={options} onLoadSuccess={onLoadSuccess} onLoadError={onLoadError}
                     loading={<div className="flex items-center justify-center" style={{ height: vpH }}><div className="text-center"><div className="mx-auto h-12 w-12 rounded-full border-[3px] border-white/20 border-t-white animate-spin mb-4" /><p className="text-sm font-medium text-white/60">Loading…</p></div></div>}>
                     {numPages && (
                       <div style={{ paddingTop: V_PAD, paddingBottom: V_PAD }}>
                         {Array.from({ length: numPages }, (_, i) => i+1).map((num) => (
-                          <div key={num} data-page={num} className="flex justify-center" style={{ marginBottom: num < numPages ? PAGE_GAP : 0 }}>
-                            <div className="relative overflow-hidden rounded-sm"
+                          <div key={num} className="flex justify-center" style={{ marginBottom: num < numPages ? PAGE_GAP : 0 }}>
+                            <div data-page={num} data-page-surface className="relative overflow-hidden rounded-sm"
                               style={{ lineHeight: 0, fontSize: 0, backgroundColor: "#fff", boxShadow: pageShadow, userSelect: "text", WebkitUserSelect: "text" }}>
                               <Page pageNumber={num} width={Math.round(singlePageW * scale)} renderTextLayer renderAnnotationLayer={false}
                                 loading={<div className="animate-pulse bg-neutral-200" style={{ width: Math.round(singlePageW*scale), height: Math.round(Math.round(singlePageW*scale)/pdfAsp) }} />} />
@@ -1115,7 +1231,7 @@ export default function ReaderPage() {
                 <div ref={doubleViewRef}
                   className={["absolute inset-0 scrollbar-none overflow-auto", canPanZoom?(isDragging?"cursor-grabbing":"cursor-grab"):"cursor-default"].join(" ")}
                   onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                  onDoubleClick={onDoubleClickViewer} onTouchStart={onTouchStartViewer}
+                  onDoubleClick={onDoubleClickViewer} onTouchStart={onTouchStartViewer} onContextMenuCapture={suppressReaderContextMenu}
                   style={{ touchAction: canPanZoom ? "none" : "auto" }}>
                   <Document file={file} options={options} onLoadSuccess={onLoadSuccess} onLoadError={onLoadError}
                     loading={<div className="absolute inset-0 flex items-center justify-center"><div className="text-center"><div className="mx-auto h-12 w-12 rounded-full border-[3px] border-white/20 border-t-white animate-spin mb-4" /><p className="text-sm font-medium text-white/60">Loading…</p></div></div>}>
@@ -1132,7 +1248,7 @@ export default function ReaderPage() {
                         )}
                         <div style={{ position: "absolute", inset: 0, display: "flex", gap: GUTTER, zIndex: 2, opacity: prevRenderPages?(fadeIn?1:0):1, transition: prevRenderPages?`opacity ${FADE_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`:"none" }}>
                           {renderPages.map((num) => (
-                            <div key={num} data-page={num}
+                            <div key={num} data-page={num} data-page-surface
                               style={{ position: "relative", width: scaledPageW, height: scaledPageH, lineHeight: 0, fontSize: 0, flexShrink: 0, backgroundColor: "#fff", boxShadow: pageShadow, overflow: "hidden", borderRadius: 2, userSelect: "text", WebkitUserSelect: "text" }}>
                               <Page key={`page-${num}-${scaledPageW}-${scaledPageH}`} pageNumber={num} width={scaledPageW}
                                 renderTextLayer renderAnnotationLayer={false}

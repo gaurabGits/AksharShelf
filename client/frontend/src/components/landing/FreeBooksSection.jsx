@@ -97,7 +97,10 @@ function FreeBooksSection() {
           {loading && (
             <div className="flex gap-3 overflow-hidden sm:gap-4">
               {Array(6).fill(0).map((_, i) => (
-                <div key={i} className="h-56 w-36 flex-shrink-0 rounded-xl bg-gray-200 animate-pulse dark:bg-gray-800 sm:h-64 sm:w-44" />
+                <div
+                  key={i}
+                  className="aspect-[177/266] w-[160px] flex-shrink-0 rounded-xl bg-gray-200 animate-pulse dark:bg-gray-800 sm:w-[175px]"
+                />
               ))}
             </div>
           )}
@@ -109,10 +112,10 @@ function FreeBooksSection() {
                 <Link
                   key={book._id}
                   to={`/books/${book._id}`}
-                  className={`group w-36 flex-shrink-0 no-underline sm:w-44 ${visible ? "slide-right" : "opacity-0"}`}
+                  className={`group w-[160px] flex-shrink-0 no-underline sm:w-[175px] ${visible ? "slide-right" : "opacity-0"}`}
                   style={visible ? { animationDelay: `${i * 60}ms` } : {}}
                 >
-                  <div className="relative h-56 w-36 overflow-hidden rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl sm:h-64 sm:w-44">
+                  <div className="relative aspect-[177/266] w-full overflow-hidden rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl">
 
                     {/* Cover image — full, no tint */}
                     {book.coverImage ? (

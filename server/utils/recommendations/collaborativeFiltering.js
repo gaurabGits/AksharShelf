@@ -6,7 +6,7 @@ async function getCollaborativeScores(BookActivity, bookId, { maxUsers = 400, ma
 
   const users = await BookActivity.find({
     book: bookObjectId,
-    readAt: { $ne: null },
+    $or: [{ readAt: { $ne: null } }, { viewedAt: { $ne: null } }],
   })
     .select("user")
     .limit(maxUsers)
@@ -20,13 +20,15 @@ async function getCollaborativeScores(BookActivity, bookId, { maxUsers = 400, ma
       $match: {
         user: { $in: userIds },
         book: { $ne: bookObjectId },
-        readAt: { $ne: null },
+        $or: [{ readAt: { $ne: null } }, { viewedAt: { $ne: null } }],
       },
     },
     {
       $project: {
         book: 1,
-        score: { $literal: 1 },
+        score: {
+          $cond: [{ $ne: ["$readAt", null] }, 2, 1],
+        },
         readers: { $literal: 1 },
       },
     },

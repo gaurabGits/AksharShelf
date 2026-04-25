@@ -20,6 +20,20 @@ const bookshelfSchema = new mongoose.Schema(
       required: true,
       default: "reading",
     },
+    totalReadSeconds: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastReadPage: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    lastReadAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -25,6 +25,9 @@ const getShelf = async (req, res) => {
         ...entry.book.toObject(),
         shelfStatus: entry.status,
         shelfUpdatedAt: entry.updatedAt,
+        totalReadSeconds: entry.totalReadSeconds ?? 0,
+        lastReadPage: entry.lastReadPage ?? 1,
+        lastReadAt: entry.lastReadAt ?? null,
       }));
 
     return res.json(books);
@@ -68,6 +71,52 @@ const upsertShelf = async (req, res) => {
   }
 };
 
+const updateReadingProgress = async (req, res) => {
+  try {
+    const { bookId, secondsSpent = 0, lastReadPage = 1 } = req.body;
+
+    if (!bookId) {
+      return res.status(400).json({ message: "bookId is required." });
+    }
+
+    const safeSecondsSpent = Math.max(0, Math.floor(Number(secondsSpent) || 0));
+    const safeLastReadPage = Math.max(1, Math.floor(Number(lastReadPage) || 1));
+
+    const book = await Book.findById(bookId).select("_id");
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    const entry = await Bookshelf.findOneAndUpdate(
+      { user: req.user.id, book: bookId },
+      {
+        $set: {
+          status: "reading",
+          lastReadPage: safeLastReadPage,
+          lastReadAt: new Date(),
+        },
+        $inc: {
+          totalReadSeconds: safeSecondsSpent,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    return res.json({
+      message: "Reading progress updated",
+      progress: {
+        bookId: String(entry.book),
+        status: entry.status,
+        totalReadSeconds: entry.totalReadSeconds ?? 0,
+        lastReadPage: entry.lastReadPage ?? 1,
+        lastReadAt: entry.lastReadAt ?? null,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 const removeFromShelf = async (req, res) => {
   try {
     const { id } = req.params;
@@ -90,5 +139,6 @@ const removeFromShelf = async (req, res) => {
 module.exports = {
   getShelf,
   upsertShelf,
+  updateReadingProgress,
   removeFromShelf,
 };

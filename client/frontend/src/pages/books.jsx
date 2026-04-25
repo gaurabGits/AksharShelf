@@ -20,7 +20,7 @@ const Badge = ({ children, className = "" }) => (
 const MiniCard = ({ book, onClick }) => (
   <button
     onClick={onClick}
-    className="group text-left w-[186px] focus:outline-none"
+    className="group flex h-full w-[186px] flex-col text-left focus:outline-none"
   >
     {/* Cover */}
     <div className="relative overflow-hidden rounded-[3px] shadow-[2px_4px_14px_rgba(60,40,10,0.13)] transition-all duration-300 group-hover:shadow-[2px_8px_24px_rgba(60,40,10,0.22)]">
@@ -48,17 +48,17 @@ const MiniCard = ({ book, onClick }) => (
     </div>
 
     {/* Meta */}
-    <div className="mt-2.5 px-0.5">
-      <p className="line-clamp-2 text-[16px] font-semibold leading-[1.28] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
+    <div className="mt-2.5 flex flex-1 flex-col px-0.5">
+      <p className="truncate min-h-[1.35rem] text-[16px] font-semibold leading-[1.28] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
         {book.title}
       </p>
-      <p className="font-sans italic mt-1 text-[14px] font-semibold leading-[1.35] text-stone-500 dark:text-stone-400">
+      <p className="mt-1 line-clamp-1 min-h-[1.35rem] font-sans italic text-[14px] font-semibold leading-[1.35] text-stone-500 dark:text-stone-400">
         by <span className="font-medium italic text-stone-900 dark:text-stone-100">
           {book.author || "Unknown Author"}
         </span>
       </p>
 
-      <p className="font-sans mt-3 text-[14px] font-semibold leading-[1.35] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
+      <p className="mt-auto pt-3 font-sans text-[14px] font-semibold leading-[1.35] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
         {book.isPaid ? `Rs. ${book.price}` : "Free"}
       </p>
     </div>

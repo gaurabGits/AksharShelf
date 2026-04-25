@@ -1,13 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import { HiOutlineBookOpen, HiOutlineBookmark, HiBookmark } from "react-icons/hi2";
+import {
+  HiOutlineBookOpen,
+  HiOutlineBookmark,
+  HiBookmark,
+  HiOutlineCheckCircle,
+} from "react-icons/hi2";
 
 export function BookCardSkeleton() {
   return (
-    <div className="w-full min-w-0 animate-pulse">
+    <div className="flex h-full w-full min-w-0 animate-pulse flex-col">
       <div className="overflow-hidden bg-white p-0 shadow-[0_16px_35px_rgba(15,23,42,0.08)] dark:bg-gray-900 dark:shadow-black/30">
         <div className="aspect-[175/266] w-full bg-gray-200 dark:bg-gray-800" />
       </div>
-      <div className="px-0 pt-3">
+      <div className="flex flex-1 flex-col px-0 pt-3">
         <div className="flex flex-col gap-2">
           <div className="h-4 w-4/5 bg-gray-200 dark:bg-gray-700" />
           <div className="h-3.5 w-3/5 bg-gray-200 dark:bg-gray-700" />
@@ -20,6 +25,8 @@ export function BookCardSkeleton() {
 
 const BookCard = ({ book, onClick, onToggleBookmark, isBookmarked = false }) => {
   const navigate = useNavigate();
+  const isCompleted = book?.shelfStatus === "completed";
+
   const handleOpen = () => {
     if (typeof onClick === "function") {
       onClick(book);
@@ -30,7 +37,7 @@ const BookCard = ({ book, onClick, onToggleBookmark, isBookmarked = false }) => 
   };
 
   return (
-    <article className="group w-full min-w-0">
+    <article className="group flex h-full w-full min-w-0 flex-col">
       <div
         role="button"
         tabIndex={0}
@@ -41,9 +48,16 @@ const BookCard = ({ book, onClick, onToggleBookmark, isBookmarked = false }) => 
             handleOpen();
           }
         }}
-        className="cursor-pointer outline-none"
+        className="flex h-full cursor-pointer flex-col outline-none"
       >
         <div className="relative overflow-hidden bg-white p-0 shadow-[0_18px_38px_rgba(15,23,42,0.08)] transition duration-300 group-hover:shadow-[0_22px_48px_rgba(15,23,42,0.14)] dark:bg-gray-900 dark:shadow-black/30">
+          {isCompleted && (
+            <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 shadow-sm dark:border-emerald-900/70 dark:bg-emerald-950/90 dark:text-emerald-300">
+              <HiOutlineCheckCircle className="text-xs" />
+              Completed
+            </span>
+          )}
+
           <div className="aspect-[177/266] w-full overflow-hidden bg-[#eef1e6]">
             {book.coverImage ? (
               <img
@@ -73,17 +87,17 @@ const BookCard = ({ book, onClick, onToggleBookmark, isBookmarked = false }) => 
           )}
         </div>
 
-        <div className="px-0 pt-3 font-sans">
-          <h3 className="line-clamp-2 text-[16px] font-semibold leading-[1.28] tracking-[-0.01em] text-gray-950 dark:text-white">
+        <div className="flex flex-1 flex-col px-0 pt-3 font-sans">
+          <h3 className="truncate min-h-[1.35rem] text-[16px] font-semibold leading-[1.28] tracking-[-0.01em] text-gray-950 dark:text-white">
             {book.title}
           </h3>
-          <p className="font-sans italic mt-1 text-[14px] font-semibold leading-[1.35] text-stone-500 dark:text-stone-400">
+          <p className="mt-1 line-clamp-1 min-h-[1.35rem] font-sans italic text-[14px] font-semibold leading-[1.35] text-stone-500 dark:text-stone-400">
             by <span className="font-medium italic text-stone-900 dark:text-stone-100">
               {book.author || "Unknown Author"}
             </span>
           </p>
 
-          <p className="font-sans mt-3 text-[14px] font-semibold leading-[1.35] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
+          <p className="mt-auto pt-3 font-sans text-[14px] font-semibold leading-[1.35] tracking-[-0.01em] text-stone-900 dark:text-stone-100">
             {book.isPaid ? `Rs. ${book.price}` : "Free"}
           </p>
         </div>

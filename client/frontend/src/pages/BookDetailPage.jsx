@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   HiArrowLeft,
   HiBookmark,
@@ -287,7 +287,7 @@ function ReviewsModal({
       )}
 
       {/* Reviews - Scrollable */}
-      <div className="overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800">
+      <div className="relative overflow-x-visible overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800">
         {reviews.length === 0 ? (
           <p className="text-sm text-stone-400 text-center py-12">No reviews yet.</p>
         ) : (
@@ -406,7 +406,7 @@ function ReviewRow({ review, clamp = false, isMine = false, menuOpen = false, on
     new Date(review.updatedAt).getTime() - new Date(review.createdAt).getTime() > 60 * 1000;
 
   return (
-    <div className="flex gap-3.5 px-5 py-4">
+    <div className={`relative flex gap-3.5 px-5 py-4 ${menuOpen ? "z-30" : ""}`}>
       <Avatar name={name} size="w-7 h-7 text-[11px]" />
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
@@ -439,7 +439,7 @@ function ReviewRow({ review, clamp = false, isMine = false, menuOpen = false, on
               </button>
               {menuOpen && (
                 <div
-                  className="absolute right-0 top-8 z-50 w-28 bg-[#faf8f3] dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl rounded-[3px] overflow-visible"
+                  className="absolute bottom-full right-0 z-50 mb-1 w-28 overflow-visible rounded-[3px] border border-stone-200 bg-[#faf8f3] shadow-xl ring-1 ring-black/5 dark:border-stone-700 dark:bg-stone-900"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -498,9 +498,11 @@ function SectionTitle({ children }) {
 /* ─── Main Page ─────────────────────────────────────────────────── */
 
 export default function BookDetailPage() {
+  const location = useLocation();
   const { id }   = useParams();
   const navigate = useNavigate();
   const notify   = useNotification();
+  const excludeSimilarBookId = String(location.state?.excludeSimilarBookId || "").trim();
 
   const [book,   setBook]   = useState(null);
   const [loading, setLoading] = useState(true);
@@ -545,7 +547,7 @@ export default function BookDetailPage() {
         const [bookRes, reviewRes, recRes, collabRes] = await Promise.allSettled([
           fetchBookDetail(id),
           API.get(`/books/${id}/reviews`),
-          fetchBookRecommendations(id, { limit: 12 }),
+          fetchBookRecommendations(id, { limit: 12, excludeBookId: excludeSimilarBookId }),
           fetchBookCollaborativeRecommendations(id, { limit: 12 }),
         ]);
         if (!active) return;
@@ -823,10 +825,9 @@ export default function BookDetailPage() {
         </div>
 
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="grid gap-12 xl:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_330px]">
 
-            {/* ── Left column ─────────────────────────────────── */}
-            <div className="space-y-12">
+            <div className="min-w-0 space-y-12">
 
               {/* ── HERO: Cover + Meta ──────────────────────────── */}
               <div className="grid gap-8 md:grid-cols-[225px_minmax(0,1fr)] md:items-start">
@@ -975,7 +976,7 @@ export default function BookDetailPage() {
               {/* ── Book Details Table ───────────────────────────── */}
               <section>
                 <SectionTitle>Book Details</SectionTitle>
-                <div className="border border-stone-200 dark:border-stone-800 rounded-[3px] divide-y divide-stone-100 dark:divide-stone-800 overflow-hidden">
+                <div className="border border-stone-200 dark:border-stone-800 rounded-[3px] divide-y divide-stone-100 dark:divide-stone-800 overflow-visible">
                   {otherInfo.map((item, i) => (
                     <div key={item.label} className={`flex items-center px-5 py-3.5 ${i % 2 === 0 ? "bg-white dark:bg-stone-900/40" : "bg-stone-50/60 dark:bg-stone-900/20"}`}>
                       <span className="w-36 shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-400">
@@ -1015,7 +1016,7 @@ export default function BookDetailPage() {
                 </div>
 
                 {/* Review list */}
-                <div className="border border-stone-200 dark:border-stone-800 rounded-[3px] divide-y divide-stone-100 dark:divide-stone-800 overflow-hidden">
+                <div className="relative isolate overflow-visible rounded-[3px] border border-stone-200 divide-y divide-stone-100 dark:border-stone-800 dark:divide-stone-800">
                   {previewReviews.length > 0 ? (
                     previewReviews.map((r) => (
                       <ReviewRow
@@ -1088,36 +1089,33 @@ export default function BookDetailPage() {
                 </div>
               </section>
 
-              {/* Similar books (mobile/tablet) */}
-              <div className="xl:hidden">
-                <SectionTitle>Similar Books</SectionTitle>
-                <ContentBasedFilteringSidebar
-                  books={recommendations}
-                  loading={recommendationsLoading}
-                  title=""
-                  variant="large"
-                  maxItems={4}
-                  className="border-stone-200 dark:border-stone-800"
-                />
-              </div>
-
             </div>
 
-            {/* ── Right sidebar ──────────────────────────────────── */}
             <aside className="hidden xl:block">
-              <div className="xl:sticky xl:top-8">
-                <SectionTitle>Similar Books</SectionTitle>
+              <div className="sticky top-8">
                 <ContentBasedFilteringSidebar
                   books={recommendations}
                   loading={recommendationsLoading}
-                  title=""
-                  variant="large"
+                  title="Similar Books"
+                  variant="sidebar"
                   maxItems={4}
                   className="border-stone-200 dark:border-stone-800"
+                  navigationState={{ excludeSimilarBookId: id }}
                 />
               </div>
             </aside>
+          </div>
 
+          <div className="mt-12 xl:hidden">
+            <ContentBasedFilteringSidebar
+              books={recommendations}
+              loading={recommendationsLoading}
+              title="Similar Books"
+              variant="large"
+              maxItems={4}
+              className="border-stone-200 dark:border-stone-800"
+              navigationState={{ excludeSimilarBookId: id }}
+            />
           </div>
 
           {/* ── Collaborative recs ──────────────────────────────── */}
